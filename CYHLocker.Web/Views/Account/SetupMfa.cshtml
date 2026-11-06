@@ -1,0 +1,49 @@
+@model CYHLocker.Data.DTOs.MfaSetupDto
+@{
+    ViewData["Title"] = "Setup Two-Factor Authentication";
+    Layout = "_Layout";
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">📱 Setup Two-Factor Authentication</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <p class="text-muted">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)</p>
+                    <img src="@Model.QrCodeUrl" alt="QR Code" class="img-fluid border rounded p-2" width="200" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-muted small">Or enter this key manually:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control font-monospace" value="@Model.ManualKey" readonly id="manualKey" />
+                        <button class="btn btn-outline-secondary" type="button"
+                                onclick="navigator.clipboard.writeText('@Model.ManualKey'); this.textContent='Copied!'">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+
+                <hr />
+
+                <form asp-action="EnableMfa" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                    <p class="mb-2">Enter the 6-digit code from your authenticator app to confirm setup:</p>
+                    <div class="mb-3">
+                        <input name="code" class="form-control form-control-lg text-center"
+                               placeholder="000000" maxlength="6" autocomplete="one-time-code"
+                               inputmode="numeric" pattern="[0-9]*" autofocus />
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-info text-white">Enable MFA</button>
+                        <a asp-action="Profile" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

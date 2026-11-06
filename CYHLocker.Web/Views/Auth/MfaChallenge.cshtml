@@ -1,0 +1,53 @@
+@{
+    ViewData["Title"] = "Two-Factor Verification — CYHLocker";
+    Layout = "_Layout";
+}
+
+<div class="auth-wrapper">
+    <div class="max-w-md mx-auto px-4 w-100">
+        <div class="auth-card p-4 p-md-5">
+
+            <div class="text-center mb-4">
+                <span style="font-size:2.2rem;">📱</span>
+                <h3 class="fw-bold text-white mt-2 mb-1">Two-Factor Auth</h3>
+                <p class="small text-muted mb-0">Enter the 6-digit code from your authenticator app</p>
+            </div>
+
+            <form asp-action="MfaChallenge" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+
+                <div class="mb-4">
+                    <label class="auth-label text-center">Authenticator 6-Digit Code</label>
+                    <input name="mfaCode"
+                           class="form-control auth-input text-center fs-3 fw-bold"
+                           placeholder="000000"
+                           maxlength="6"
+                           autocomplete="one-time-code"
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           style="letter-spacing:8px;"
+                           autofocus
+                           required />
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-glow" style="padding:12px; border-radius:12px; font-size:1rem;">
+                        Verify &amp; Unlock Vault →
+                    </button>
+                </div>
+
+                <div class="text-center pt-2 border-top" style="border-color:rgba(255,255,255,0.08) !important;">
+                    <a asp-action="Login" class="small text-decoration-none" style="color:#94a3b8;">
+                        ← Cancel &amp; Back to Login
+                    </a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

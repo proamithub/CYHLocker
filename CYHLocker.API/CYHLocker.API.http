@@ -1,0 +1,6 @@
+@CYHLocker.API_HostAddress = http://localhost:5201
+
+GET {{CYHLocker.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

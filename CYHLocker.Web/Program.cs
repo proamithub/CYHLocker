@@ -1,0 +1,41 @@
+using CYHLocker.Logic.Interfaces;
+using CYHLocker.Logic.Services;
+using CYHLocker.Repository.Interfaces;
+using CYHLocker.Repository.Repositories;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();
+
+// DI — same Logic and Repository as API (reusable!)
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService,    AuthService>();
+
+// Cookie Auth for web session
+builder.Services.AddAuthentication("CYHCookie")
+    .AddCookie("CYHCookie", opt =>
+    {
+        opt.LoginPath        = "/Auth/Login";
+        opt.LogoutPath       = "/Auth/Logout";
+        opt.AccessDeniedPath = "/Auth/Login";
+        opt.ExpireTimeSpan   = TimeSpan.FromHours(8);
+        opt.Cookie.HttpOnly  = true;
+        opt.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+    });
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+app.Run();

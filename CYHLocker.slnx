@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="CYHLocker.API/CYHLocker.API.csproj" />
+  <Project Path="CYHLocker.Data/CYHLocker.Data.csproj" />
+  <Project Path="CYHLocker.Logic/CYHLocker.Logic.csproj" />
+  <Project Path="CYHLocker.Mobile/CYHLocker.Mobile.csproj" />
+  <Project Path="CYHLocker.Repository/CYHLocker.Repository.csproj" />
+  <Project Path="CYHLocker.Tests/CYHLocker.Tests.csproj" />
+  <Project Path="CYHLocker.Web/CYHLocker.Web.csproj" />
+</Solution>

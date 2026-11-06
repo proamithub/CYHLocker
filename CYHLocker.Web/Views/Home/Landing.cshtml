@@ -1,0 +1,204 @@
+@{
+    ViewData["Title"] = "CYHLocker — Smart & Peaceful Password Vault";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- ========================================================
+     CYHLocker Landing Page — Clean Single Orbit Hero
+     ======================================================== -->
+
+<!-- ---- HERO SECTION ---- -->
+<section class="min-vh-100 d-flex align-items-center position-relative pt-5 pb-5 overflow-hidden"
+         style="background: radial-gradient(ellipse 90% 70% at 50% -15%, rgba(139,92,246,0.22) 0%, rgba(6,182,212,0.08) 45%, transparent 75%), #080c18;">
+    
+    <div class="max-w-7xl mx-auto px-4 px-md-6 w-100 py-4 py-lg-5">
+        <div class="row align-items-center g-4 g-lg-5">
+
+            <!-- ===== LEFT COLUMN: Content ===== -->
+            <div class="col-12 col-lg-6 order-2 order-lg-1 text-center text-lg-start">
+
+                <!-- Trust Badge -->
+                <div class="mb-3 mb-md-4 fade-up">
+                    <span class="trust-badge">
+                        <span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 8px #10b981;"></span>
+                        Trusted by 50,000+ users worldwide
+                    </span>
+                </div>
+
+                <!-- Main Heading -->
+                <h1 class="fw-bold mb-3 fade-up" style="font-size:clamp(2.1rem, 4.8vw, 3.5rem); line-height:1.15; letter-spacing:-0.5px;">
+                    <span style="color:#f8fafc;">Keep Your Passwords</span><br/>
+                    <span class="gradient-text">Safe &amp; Stress-Free</span>
+                </h1>
+
+                <!-- Subtitle -->
+                <p class="mb-4 mb-lg-5 fade-up mx-auto mx-lg-0" style="color:#94a3b8; font-size:1.05rem; line-height:1.75; max-width:520px;">
+                    CYHLocker brings peace of mind to your digital world. Backed by military-grade
+                    <strong style="color:#c4b5fd;">AES-256 encryption</strong>, your credentials stay
+                    private, locked, and reachable whenever you need them.
+                </p>
+
+                <!-- Feature Steps -->
+                <div class="d-flex flex-column gap-2 mb-4 mb-lg-5 fade-up text-start" id="features">
+
+                    <div class="feature-step">
+                        <div class="feature-icon-box">⚡</div>
+                        <div>
+                            <div class="fw-semibold mb-1" style="color:#f1f5f9; font-size:1rem;">Instant &amp; Effortless Access</div>
+                            <div class="small" style="color:#64748b;">
+                                Unlock all your credentials with just one master key or biometric touch.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="feature-step">
+                        <div class="feature-icon-box">🛡️</div>
+                        <div>
+                            <div class="fw-semibold mb-1" style="color:#f1f5f9; font-size:1rem;">Zero-Knowledge Security</div>
+                            <div class="small" style="color:#64748b;">
+                                Everything is encrypted before leaving your device. Even we cannot read your data.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="feature-step">
+                        <div class="feature-icon-box">🔄</div>
+                        <div>
+                            <div class="fw-semibold mb-1" style="color:#f1f5f9; font-size:1rem;">Smooth Multi-Device Sync</div>
+                            <div class="small" style="color:#64748b;">
+                                Always ready on your mobile, tablet, and desktop browser without missing a beat.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTA Buttons -->
+                <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start align-items-center mb-3 fade-up">
+                    <a asp-controller="Auth" asp-action="Register"
+                       class="btn btn-glow"
+                       style="padding:12px 30px; border-radius:12px; font-size:1rem;">
+                        Get Started Free →
+                    </a>
+                    <a href="#security"
+                       class="btn btn-outline-glow"
+                       style="padding:12px 26px; border-radius:12px; font-size:1rem;">
+                        Explore Security
+                    </a>
+                </div>
+
+                <!-- Trust note -->
+                <p class="small fade-up mb-0" style="color:#475569;">
+                    ✓ No credit card required &nbsp;•&nbsp; ✓ Free forever plan &nbsp;•&nbsp; ✓ Set up in 60s
+                </p>
+            </div>
+
+            <!-- ===== RIGHT COLUMN: Single Orbit Mascot with Rotating Energy Ring ===== -->
+            <div class="col-12 col-lg-6 order-1 order-lg-2 d-flex justify-content-center">
+                <div class="single-orbit-container">
+
+                    <!-- Rotating Neon Energy Halo (Moves around the girl's orbit) -->
+                    <div class="rotating-halo-ring"></div>
+
+                    <!-- Glowing Radial Ambient Light -->
+                    <div class="girl-ambient-glow"></div>
+
+                    <!-- Central Floating Mascot (Cute Indian Yoga Girl + Her Orbit) -->
+                    <div class="mascot-levitate">
+                        <img src="~/images/mascot-yoga-girl.jpg"
+                             alt="CYHLocker Yoga Security Mascot"
+                             class="mascot-single-art"
+                             loading="eager" />
+
+                        <!-- Subtle Bottom Watermark on Orbit Frame -->
+                        <div class="orbit-watermark" title="Secured by CYHLocker">
+                            <span class="watermark-icon">🔒</span>
+                            <span class="watermark-text">CYH<span class="watermark-accent">Locker</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Subtle Floating Security Sparkles -->
+                    <div class="sparkle sparkle-1">✦</div>
+                    <div class="sparkle sparkle-2">✦</div>
+                    <div class="sparkle sparkle-3">✦</div>
+
+                </div>
+            </div>
+            <!-- ===== END RIGHT COLUMN ===== -->
+
+        </div>
+    </div>
+</section>
+
+
+<!-- ---- SECURITY FEATURES SECTION ---- -->
+<section id="security" class="py-5" style="background:#080c18;">
+    <div class="max-w-7xl mx-auto px-4 px-md-6">
+
+        <div class="text-center mb-5 fade-up">
+            <span class="trust-badge mb-3 d-inline-block">🔐 Enterprise Protection</span>
+            <h2 class="fw-bold" style="color:#f1f5f9; font-size:clamp(1.7rem,3.8vw,2.5rem);">
+                Why Thousands Choose <span class="gradient-text">CYHLocker</span>
+            </h2>
+            <p class="mt-2 text-muted mx-auto" style="max-width:520px;">
+                Designed with zero-compromise encryption so you never have to worry about your data.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            @{
+                var cards = new[] {
+                    new { Icon = "🔐", Title = "AES-256 Encryption",
+                          Desc  = "Every password entry is locked with AES-256 — the trusted standard used by global security agencies." },
+                    new { Icon = "👁️", Title = "Zero-Knowledge Architecture",
+                          Desc  = "Your master password never leaves your browser. Even our database administrators can never access your secrets." },
+                    new { Icon = "📱", Title = "TOTP Multi-Factor Auth",
+                          Desc  = "Pair with Google Authenticator or Microsoft Authenticator to secure your account with 2FA codes." },
+                    new { Icon = "🌐", Title = "Mobile & Web Sync",
+                          Desc  = "Synchronize across your phone, tablet, and PC with end-to-end TLS/HTTPS encrypted pipelines." },
+                    new { Icon = "🕐", Title = "Intelligent Auto-Lock",
+                          Desc  = "Your vault automatically seals when inactive, preventing unauthorized access when stepping away." },
+                    new { Icon = "🔑", Title = "Strength & Leak Auditor",
+                          Desc  = "Identify reused, vulnerable, or breached passwords instantly and generate ultra-secure replacements." },
+                };
+            }
+            @foreach (var card in cards)
+            {
+                <div class="col-12 col-sm-6 col-lg-4 fade-up">
+                    <div class="glass-card p-4 h-100">
+                        <div class="mb-3" style="font-size:2.2rem;">@card.Icon</div>
+                        <h5 class="fw-semibold mb-2" style="color:#f1f5f9; font-size:1.1rem;">@card.Title</h5>
+                        <p class="small m-0" style="color:#64748b; line-height:1.7;">@card.Desc</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+
+<!-- ---- BOTTOM CTA BANNER ---- -->
+<section class="py-5 my-4">
+    <div class="max-w-7xl mx-auto px-4 px-md-6">
+        <div class="glass-card p-4 p-md-5 text-center fade-up"
+             style="background: linear-gradient(135deg, rgba(139,92,246,0.14) 0%, rgba(6,182,212,0.1) 100%); border-color:rgba(139,92,246,0.3);">
+            <h2 class="fw-bold mb-3" style="color:#f1f5f9; font-size:clamp(1.5rem, 3.8vw, 2.3rem);">
+                Ready to Experience Stress-Free Security?
+            </h2>
+            <p class="mb-4 mx-auto" style="color:#94a3b8; max-width:480px; line-height:1.7;">
+                Join thousands of individuals and teams who trust CYHLocker to keep their credentials safe.
+            </p>
+            <div class="d-flex justify-content-center flex-wrap gap-3">
+                <a asp-controller="Auth" asp-action="Register"
+                   class="btn btn-glow"
+                   style="padding:13px 34px; border-radius:12px; font-size:1rem;">
+                    Create Free Account →
+                </a>
+                <a asp-controller="Auth" asp-action="Login"
+                   class="btn btn-outline-glow"
+                   style="padding:13px 30px; border-radius:12px; font-size:1rem;">
+                    Sign In
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

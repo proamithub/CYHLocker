@@ -1,0 +1,677 @@
+/* ============================================
+   CYHLocker — Custom Styles & Gentle Clockwise Orbit
+   ============================================ */
+
+html {
+    font-size: 14px;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+    html { font-size: 16px; }
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background-color: #080c18;
+    color: #e2e8f0;
+    overflow-x: hidden;
+}
+
+/* ---- Navbar scroll effect ---- */
+#main-navbar {
+    transition: background 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+#main-navbar.scrolled {
+    background: rgba(8, 12, 24, 0.95) !important;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 1px 0 rgba(139, 92, 246, 0.2);
+}
+
+/* ---- Gradient text ---- */
+.gradient-text {
+    background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 50%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ---- Glow buttons ---- */
+.btn-glow {
+    background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+    border: none;
+    color: #fff !important;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.btn-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.45);
+    color: #fff !important;
+}
+
+.btn-outline-glow {
+    background: rgba(139, 92, 246, 0.08);
+    border: 1.5px solid rgba(139, 92, 246, 0.5);
+    color: #c4b5fd !important;
+    font-weight: 500;
+    transition: all 0.25s ease;
+}
+
+.btn-outline-glow:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: #8b5cf6;
+    color: #fff !important;
+    transform: translateY(-2px);
+}
+
+/* ---- Glass card ---- */
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 12px 35px rgba(139, 92, 246, 0.15);
+}
+
+/* ========================================================
+   SINGLE ORBIT MASCOT (Gentle Clockwise Motion)
+   ======================================================== */
+
+.single-orbit-container {
+    position: relative;
+    width: 380px;
+    height: 380px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+/* Soft ambient glow behind the character */
+.girl-ambient-glow {
+    position: absolute;
+    width: 340px;
+    height: 340px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.24) 0%, rgba(6, 182, 212, 0.12) 50%, transparent 72%);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    filter: blur(24px);
+    animation: ambientPulse 6s ease-in-out infinite alternate;
+}
+
+@keyframes ambientPulse {
+    0%   { transform: translate(-50%, -50%) scale(0.94); opacity: 0.6; }
+    100% { transform: translate(-50%, -50%) scale(1.06); opacity: 0.95; }
+}
+
+/* 
+   GENTLE CLOCKWISE ROTATING ORBIT RING
+   Rotates smoothly and gradually in a 26s clockwise loop
+*/
+.rotating-halo-ring {
+    position: absolute;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(6, 182, 212, 0.35);
+    box-shadow: 
+        0 0 20px rgba(139, 92, 246, 0.2),
+        inset 0 0 20px rgba(6, 182, 212, 0.15);
+    animation: gentleClockwise 26s linear infinite;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Glowing energy nodes riding along the clockwise orbit */
+.rotating-halo-ring::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #06b6d4;
+    box-shadow: 0 0 12px #06b6d4, 0 0 24px rgba(6, 182, 212, 0.8);
+}
+
+.rotating-halo-ring::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #a78bfa;
+    box-shadow: 0 0 12px #a78bfa, 0 0 24px rgba(167, 139, 250, 0.8);
+}
+
+/* Pure Clockwise Smooth Rotation */
+@keyframes gentleClockwise {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Gentle floating meditation motion for the girl */
+@keyframes sereneFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.mascot-levitate {
+    position: relative;
+    z-index: 5;
+    animation: sereneFloat 6s ease-in-out infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Clean circular mascot art — blends seamlessly into dark background */
+.mascot-single-art {
+    width: 320px;
+    height: 320px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid rgba(139, 92, 246, 0.45);
+    box-shadow: 
+        0 0 30px rgba(139, 92, 246, 0.35), 
+        0 0 60px rgba(6, 182, 212, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.mascot-single-art:hover {
+    transform: scale(1.02);
+}
+
+/* Subtle Watermark at the bottom of the orbit frame */
+.orbit-watermark {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(8, 12, 24, 0.72);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    backdrop-filter: blur(8px);
+    border-radius: 100px;
+    padding: 3px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: rgba(203, 213, 225, 0.75);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(139, 92, 246, 0.2);
+    pointer-events: none;
+    z-index: 10;
+    user-select: none;
+    transition: all 0.3s ease;
+}
+
+.watermark-icon {
+    font-size: 0.75rem;
+}
+
+.watermark-accent {
+    color: #38bdf8;
+    margin-left: 1px;
+}
+
+/* Decorative cyber sparkles */
+.sparkle {
+    position: absolute;
+    color: #38bdf8;
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 6;
+    animation: sparkleTwinkle 3s ease-in-out infinite;
+}
+
+.sparkle-1 { top: 12%; right: 18%; animation-delay: 0s; font-size: 1.1rem; color: #a78bfa; }
+.sparkle-2 { bottom: 18%; left: 14%; animation-delay: 1.2s; font-size: 0.9rem; color: #06b6d4; }
+.sparkle-3 { top: 70%; right: 10%; animation-delay: 2.1s; font-size: 0.8rem; color: #38bdf8; }
+
+@keyframes sparkleTwinkle {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50%       { opacity: 0.9; transform: scale(1.2); }
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN (Tablets & Mobile Phones)
+   ======================================================== */
+
+@media (max-width: 991px) {
+    .single-orbit-container {
+        width: 320px;
+        height: 320px;
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .rotating-halo-ring {
+        width: 300px;
+        height: 300px;
+    }
+    .mascot-single-art {
+        width: 270px;
+        height: 270px;
+    }
+    .girl-ambient-glow {
+        width: 270px;
+        height: 270px;
+    }
+}
+
+@media (max-width: 576px) {
+    .single-orbit-container {
+        width: 270px;
+        height: 270px;
+    }
+    .rotating-halo-ring {
+        width: 250px;
+        height: 250px;
+    }
+    .mascot-single-art {
+        width: 225px;
+        height: 225px;
+    }
+    .girl-ambient-glow {
+        width: 220px;
+        height: 220px;
+    }
+    .orbit-watermark {
+        bottom: 8px;
+        font-size: 0.62rem;
+        padding: 2px 9px;
+        gap: 4px;
+    }
+    .watermark-icon {
+        font-size: 0.65rem;
+    }
+}
+
+/* Feature steps */
+.feature-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.feature-step:hover {
+    background: rgba(255, 255, 255, 0.04);
+    transform: translateX(4px);
+}
+
+.feature-icon-box {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(6, 182, 212, 0.2));
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.15);
+}
+
+/* Trust badge */
+.trust-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+    border-radius: 100px;
+    padding: 5px 14px;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+/* Footer & Compliance */
+.landing-footer {
+    background: #050810;
+    border-top: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.footer-link {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.2s ease, transform 0.2s ease;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.footer-link:hover {
+    color: #c4b5fd;
+    transform: translateX(2px);
+}
+
+.footer-social {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.footer-social:hover {
+    background: rgba(139, 92, 246, 0.25);
+    border-color: #8b5cf6;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.compliance-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 0.74rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* Scroll Fade-up */
+.fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* ========================================================
+   AUTHENTICATION & LOGIN PAGE STYLES (Split 2-Column)
+   ======================================================== */
+
+.auth-wrapper {
+    min-height: calc(100vh - 120px);
+    padding-top: 90px;
+    padding-bottom: 50px;
+    display: flex;
+    align-items: center;
+}
+
+.auth-card {
+    background: rgba(15, 22, 42, 0.65);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(139, 92, 246, 0.12);
+}
+
+.auth-left-banner {
+    position: relative;
+    padding: 2.5rem 2rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.auth-input-group {
+    position: relative;
+}
+
+.auth-input {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.8) !important;
+    border: 1.5px solid rgba(139, 92, 246, 0.3) !important;
+    border-radius: 12px !important;
+    color: #f8fafc !important;
+    padding: 12px 16px !important;
+    font-size: 0.95rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.auth-input:focus {
+    background: rgba(15, 23, 42, 0.98) !important;
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.25) !important;
+    outline: none !important;
+    color: #ffffff !important;
+}
+
+.auth-input::placeholder {
+    color: #64748b !important;
+}
+
+.auth-input-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+
+.auth-input-icon:hover {
+    color: #c4b5fd;
+}
+
+.auth-label {
+    display: block;
+    color: #cbd5e1;
+    font-size: 0.86rem;
+    font-weight: 500;
+    margin-bottom: 7px;
+}
+
+/* Auth Mode Tabs */
+.auth-tabs-nav {
+    display: flex;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 1.5rem;
+}
+
+.auth-tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.auth-tab-btn:hover {
+    color: #f1f5f9;
+}
+
+.auth-tab-btn.active {
+    background: rgba(139, 92, 246, 0.25);
+    border: 1px solid rgba(139, 92, 246, 0.45);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(139, 92, 246, 0.25);
+}
+
+/* Google Sign-in Button */
+.btn-google {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    color: #f1f5f9;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 11px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-google:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Auth Divider */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.78rem;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin: 1.4rem 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.auth-divider span {
+    padding: 0 12px;
+}
+
+/* Biometric Scanner Box */
+.biometric-scanner-box {
+    background: rgba(139, 92, 246, 0.08);
+    border: 1.5px dashed rgba(139, 92, 246, 0.4);
+    border-radius: 16px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.biometric-scanner-box:hover {
+    background: rgba(139, 92, 246, 0.16);
+    border-color: #06b6d4;
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(6, 182, 212, 0.3);
+}
+
+.biometric-icon-pulse {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(6, 182, 212, 0.25));
+    border: 1px solid rgba(6, 182, 212, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    margin: 0 auto 1.25rem;
+    animation: scannerPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes scannerPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 15px rgba(6, 182, 212, 0);
+    }
+}
+
+/* Left Column Security Features */
+.auth-feature-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.auth-feature-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: translateX(4px);
+}
+
+.auth-feature-badge {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(6, 182, 212, 0.2));
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+}

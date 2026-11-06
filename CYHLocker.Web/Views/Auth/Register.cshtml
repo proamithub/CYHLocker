@@ -1,0 +1,63 @@
+@model CYHLocker.Data.DTOs.RegisterRequestDto
+@{
+    ViewData["Title"] = "Create Vault — CYHLocker";
+    Layout = "_Layout";
+}
+
+<div class="auth-wrapper">
+    <div class="max-w-lg mx-auto px-4 w-100">
+        <div class="auth-card p-4 p-md-5">
+
+            <div class="text-center mb-4">
+                <span style="font-size:2rem;">🔐</span>
+                <h3 class="fw-bold text-white mt-2 mb-1">Create Your Vault</h3>
+                <p class="small text-muted mb-0">Start protecting your credentials in 60 seconds</p>
+            </div>
+
+            <form asp-action="Register" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="FullName" class="auth-label">Full Name</label>
+                    <input asp-for="FullName" class="form-control auth-input" placeholder="Your Name" autocomplete="name" required />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="auth-label">Email Address</label>
+                    <input asp-for="Email" class="form-control auth-input" placeholder="you@domain.com" autocomplete="email" required />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Password" class="auth-label">
+                        Master Password <small style="color:#a78bfa;">(min. 8 characters)</small>
+                    </label>
+                    <input asp-for="Password" type="password" class="form-control auth-input" placeholder="••••••••••••" autocomplete="new-password" required />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-glow" style="padding:12px; border-radius:12px; font-size:1rem;">
+                        Create Free Vault →
+                    </button>
+                </div>
+
+                <div class="text-center pt-2 border-top" style="border-color:rgba(255,255,255,0.08) !important;">
+                    <p class="small mb-0" style="color:#94a3b8;">
+                        Already have a vault?
+                        <a asp-action="Login" class="fw-semibold text-decoration-none ms-1" style="color:#38bdf8;">
+                            Sign in here →
+                        </a>
+                    </p>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
