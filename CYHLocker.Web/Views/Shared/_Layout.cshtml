@@ -67,8 +67,8 @@
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     var isAdmin = User.IsInRole("Admin");
-                    var dashboardController = isAdmin ? "Admin" : "User";
-                    <a asp-controller="@dashboardController" asp-action="Dashboard"
+                    var dashboardArea = isAdmin ? "Admin" : "User";
+                    <a asp-area="@dashboardArea" asp-controller="Dashboard" asp-action="Index"
                        class="btn btn-sm btn-outline-glow hidden sm:inline-block">
                         📊 Dashboard
                     </a>
@@ -79,12 +79,12 @@
                             👤 @User.Identity.Name
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" style="background:#0f1629; border:1px solid rgba(139,92,246,0.3);">
-                            <li><a class="dropdown-item" style="color:#e2e8f0;" asp-controller="@dashboardController" asp-action="Dashboard">Dashboard</a></li>
-                            <li><a class="dropdown-item" style="color:#e2e8f0;" asp-controller="Account" asp-action="Profile">Profile &amp; Settings</a></li>
-                            <li><a class="dropdown-item" style="color:#e2e8f0;" asp-controller="Account" asp-action="ChangePassword">Change Password</a></li>
+                            <li><a class="dropdown-item" style="color:#e2e8f0;" asp-area="@dashboardArea" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                            <li><a class="dropdown-item" style="color:#e2e8f0;" asp-area="" asp-controller="Account" asp-action="Profile">Profile &amp; Settings</a></li>
+                            <li><a class="dropdown-item" style="color:#e2e8f0;" asp-area="" asp-controller="Account" asp-action="ChangePassword">Change Password</a></li>
                             <li><hr class="dropdown-divider" style="border-color:rgba(255,255,255,0.1);"></li>
                             <li>
-                                <form asp-controller="Auth" asp-action="Logout" method="post" id="logoutForm">
+                                <form asp-area="" asp-controller="Auth" asp-action="Logout" method="post" id="logoutForm">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="dropdown-item" style="color:#f87171;">Logout</button>
                                 </form>
@@ -133,10 +133,10 @@
                 else
                 {
                     var isAdmin = User.IsInRole("Admin");
-                    var dashboardController = isAdmin ? "Admin" : "User";
-                    <a asp-controller="@dashboardController" asp-action="Dashboard" class="block py-2 px-2 footer-link">📊 Dashboard</a>
-                    <a asp-controller="Account" asp-action="Profile" class="block py-2 px-2 footer-link">👤 My Account</a>
-                    <form asp-controller="Auth" asp-action="Logout" method="post" class="mt-2">
+                    var dashboardArea = isAdmin ? "Admin" : "User";
+                    <a asp-area="@dashboardArea" asp-controller="Dashboard" asp-action="Index" class="block py-2 px-2 footer-link">📊 Dashboard</a>
+                    <a asp-area="" asp-controller="Account" asp-action="Profile" class="block py-2 px-2 footer-link">👤 My Account</a>
+                    <form asp-area="" asp-controller="Auth" asp-action="Logout" method="post" class="mt-2">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="block py-2 px-2 text-danger bg-transparent border-0">🚪 Logout</button>
                     </form>

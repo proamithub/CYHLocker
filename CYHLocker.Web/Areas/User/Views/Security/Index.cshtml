@@ -1,6 +1,5 @@
 @{
-    ViewData["Title"] = "Security";
-    Layout = "~/Views/Shared/_UserLayout.cshtml";
+    ViewData["Title"] = "Security Center";
 }
 <div class="row g-4">
     <div class="col-12 col-md-6">
@@ -18,7 +17,7 @@
             }
             else
             {
-                <a asp-controller="Account" asp-action="SetupMfa" class="user-btn-primary">Enable MFA →</a>
+                <a asp-area="" asp-controller="Account" asp-action="SetupMfa" class="user-btn-primary">Enable MFA →</a>
             }
         </div>
     </div>
@@ -27,7 +26,7 @@
             <div class="user-card-icon">🔑</div>
             <h5 class="user-card-title">Change Password</h5>
             <p class="user-card-desc">Keep your account safe by updating your password regularly.</p>
-            <a asp-controller="Account" asp-action="ChangePassword" class="user-btn-primary">Change Password →</a>
+            <a asp-area="" asp-controller="Account" asp-action="ChangePassword" class="user-btn-primary">Change Password →</a>
         </div>
     </div>
     <div class="col-12">
@@ -35,7 +34,7 @@
             <div class="user-card-icon">🖥️</div>
             <h5 class="user-card-title">Active Sessions</h5>
             <p class="user-card-desc">View and revoke all sessions from your account.</p>
-            <a asp-controller="Account" asp-action="Profile" class="user-btn-primary">Manage Sessions →</a>
+            <a asp-area="" asp-controller="Account" asp-action="Profile" class="user-btn-primary">Manage Sessions →</a>
         </div>
     </div>
 </div>

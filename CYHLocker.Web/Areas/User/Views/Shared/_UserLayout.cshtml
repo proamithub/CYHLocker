@@ -27,7 +27,7 @@
             <div class="user-nav-inner">
 
                 <!-- Brand -->
-                <a asp-controller="User" asp-action="Dashboard" class="user-brand">
+                <a asp-area="User" asp-controller="Dashboard" asp-action="Index" class="user-brand">
                     <span class="user-brand-icon">🔒</span>
                     <span class="user-brand-text">CYH<span class="user-brand-accent">Locker</span></span>
                 </a>
@@ -35,17 +35,23 @@
                 <!-- Desktop Nav Links -->
                 <nav class="user-nav-links">
                     <a class="user-nav-link @(ViewBag.ActivePage == "Dashboard" ? "active" : "")"
-                       asp-controller="User" asp-action="Dashboard">
+                       asp-area="User" asp-controller="Dashboard" asp-action="Index">
                         📊 Dashboard
                     </a>
                     <a class="user-nav-link @(ViewBag.ActivePage == "Vault" ? "active" : "")"
-                       asp-controller="User" asp-action="Vault">
+                       asp-area="User" asp-controller="Vault" asp-action="Index">
                         🔐 My Vault
                     </a>
                     <a class="user-nav-link @(ViewBag.ActivePage == "Security" ? "active" : "")"
-                       asp-controller="User" asp-action="Security">
+                       asp-area="User" asp-controller="Security" asp-action="Index">
                         🛡️ Security
                     </a>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a class="user-nav-link" asp-area="Admin" asp-controller="Dashboard" asp-action="Index" style="color:#f87171;">
+                            👑 Admin Panel
+                        </a>
+                    }
                 </nav>
 
                 <!-- Right: User Info -->
@@ -57,7 +63,7 @@
                     }
                     else
                     {
-                        <a asp-controller="Account" asp-action="SetupMfa" class="user-mfa-warn">⚠️ Enable MFA</a>
+                        <a asp-area="" asp-controller="Account" asp-action="SetupMfa" class="user-mfa-warn">⚠️ Enable MFA</a>
                     }
 
                     <!-- User Dropdown -->
@@ -75,11 +81,11 @@
                                     <div class="small" style="color:#6b7280;">@ViewBag.UserEmail</div>
                                 </div>
                             </li>
-                            <li><a class="dropdown-item user-dropdown-item" asp-controller="Account" asp-action="Profile">👤 My Profile</a></li>
-                            <li><a class="dropdown-item user-dropdown-item" asp-controller="Account" asp-action="ChangePassword">🔑 Change Password</a></li>
+                            <li><a class="dropdown-item user-dropdown-item" asp-area="" asp-controller="Account" asp-action="Profile">👤 My Profile</a></li>
+                            <li><a class="dropdown-item user-dropdown-item" asp-area="" asp-controller="Account" asp-action="ChangePassword">🔑 Change Password</a></li>
                             <li><hr class="dropdown-divider" style="border-color:rgba(6,182,212,0.1);"></li>
                             <li>
-                                <form asp-controller="Auth" asp-action="Logout" method="post">
+                                <form asp-area="" asp-controller="Auth" asp-action="Logout" method="post">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="dropdown-item user-logout-item">🚪 Logout</button>
                                 </form>
@@ -96,11 +102,15 @@
 
             <!-- Mobile Menu -->
             <div class="collapse user-mobile-menu" id="mobileMenu">
-                <a asp-controller="User" asp-action="Dashboard" class="user-mobile-link">📊 Dashboard</a>
-                <a asp-controller="User" asp-action="Vault"     class="user-mobile-link">🔐 My Vault</a>
-                <a asp-controller="User" asp-action="Security"  class="user-mobile-link">🛡️ Security</a>
-                <a asp-controller="Account" asp-action="Profile" class="user-mobile-link">👤 Profile</a>
-                <form asp-controller="Auth" asp-action="Logout" method="post">
+                <a asp-area="User" asp-controller="Dashboard" asp-action="Index" class="user-mobile-link">📊 Dashboard</a>
+                <a asp-area="User" asp-controller="Vault"     asp-action="Index" class="user-mobile-link">🔐 My Vault</a>
+                <a asp-area="User" asp-controller="Security"  asp-action="Index" class="user-mobile-link">🛡️ Security</a>
+                <a asp-area=""     asp-controller="Account"   asp-action="Profile" class="user-mobile-link">👤 Profile</a>
+                @if (User.IsInRole("Admin"))
+                {
+                    <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="user-mobile-link" style="color:#f87171;">👑 Admin Panel</a>
+                }
+                <form asp-area="" asp-controller="Auth" asp-action="Logout" method="post">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="user-mobile-link user-mobile-logout">🚪 Logout</button>
                 </form>
@@ -114,7 +124,7 @@
 
         <!-- ===== FOOTER ===== -->
         <footer class="user-footer">
-            <span>© 2026 CYHLocker — Your Secure Vault</span>
+            <span>© 2026 CYHLocker — User Area</span>
             <span class="user-footer-badge">🔐 AES-256 Encrypted</span>
         </footer>
     </div>

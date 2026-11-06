@@ -11,9 +11,9 @@ public class HomeController : Controller
         if (User.Identity?.IsAuthenticated == true)
         {
             var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "User";
-            if (role == "Admin")
-                return RedirectToAction("Dashboard", "Admin");
-            return RedirectToAction("Dashboard", "User");
+            if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+                return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+            return RedirectToAction("Index", "Dashboard", new { area = "User" });
         }
         return View(); // Views/Home/Index.cshtml = Landing page
     }

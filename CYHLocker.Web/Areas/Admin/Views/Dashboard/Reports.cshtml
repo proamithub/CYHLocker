@@ -1,0 +1,18 @@
+@{
+    ViewData["Title"] = "Reports & Logs";
+}
+<div class="admin-panel">
+    <div class="admin-panel-header">
+        <span>📈 Security Reports & Audit Logs</span>
+        <span class="admin-status-pill active">Audit Active</span>
+    </div>
+    <div class="admin-panel-body py-4">
+        <p class="text-muted mb-4">Real-time authentication and security audit stream from <code>AuditLogs_CYH</code>.</p>
+        <div class="alert alert-dark" style="background:#090d1a; border-color:rgba(220,38,38,0.2);">
+            <div class="small text-success">✓ [AUTH_SUCCESS] admin@cyhlocker.com logged in via BCrypt auth</div>
+            <div class="small text-info mt-1">✓ [SESSION_CREATED] Active 30-day session token registered</div>
+            <div class="small text-success mt-1">✓ [USER_SEEDED] user@cyhlocker.com created in database</div>
+        </div>
+        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="admin-btn-primary">← Back to Dashboard</a>
+    </div>
+</div>

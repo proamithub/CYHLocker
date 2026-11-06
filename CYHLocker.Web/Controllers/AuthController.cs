@@ -173,9 +173,9 @@ public class AuthController : Controller
     // ── HELPERS ───────────────────────────────────────────────────────────────
     private IActionResult RedirectByRole(string? role)
     {
-        if (role == "Admin")
-            return RedirectToAction("Dashboard", "Admin");
-        return RedirectToAction("Dashboard", "User");
+        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+        return RedirectToAction("Index", "Dashboard", new { area = "User" });
     }
 
     private async Task SignInUserAsync(AuthResponseDto result)

@@ -1,0 +1,43 @@
+@{
+    ViewData["Title"] = "Users Management";
+}
+<div class="admin-panel">
+    <div class="admin-panel-header">
+        <span>👥 User Management</span>
+        <span class="admin-status-pill active">CYHLockerDB</span>
+    </div>
+    <div class="admin-panel-body">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0" style="background:transparent;">
+                <thead>
+                    <tr style="border-bottom:1px solid rgba(220,38,38,0.2);">
+                        <th>Role</th>
+                        <th>Email</th>
+                        <th>Full Name</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge" style="background:rgba(220,38,38,0.2); color:#fca5a5; border:1px solid rgba(220,38,38,0.4);">Admin</span></td>
+                        <td>admin@cyhlocker.com</td>
+                        <td>System Admin</td>
+                        <td><span class="admin-badge-green">Active</span></td>
+                        <td><span class="small text-muted">Protected</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge" style="background:rgba(6,182,212,0.2); color:#67e8f9; border:1px solid rgba(6,182,212,0.4);">User</span></td>
+                        <td>user@cyhlocker.com</td>
+                        <td>CYH User</td>
+                        <td><span class="admin-badge-green">Active</span></td>
+                        <td><button class="btn btn-sm btn-outline-danger py-0 px-2">Manage</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="admin-btn-primary">← Back to Dashboard</a>
+        </div>
+    </div>
+</div>

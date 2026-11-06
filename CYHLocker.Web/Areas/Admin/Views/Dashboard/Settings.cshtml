@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "System Settings";
+}
+<div class="admin-panel">
+    <div class="admin-panel-header">
+        <span>⚙️ System Security Settings</span>
+        <span class="admin-status-pill active">Hardened</span>
+    </div>
+    <div class="admin-panel-body py-4">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="p-3 rounded" style="background:rgba(255,255,255,0.02); border:1px solid rgba(220,38,38,0.2);">
+                    <div class="fw-semibold text-light mb-1">Lockout Threshold</div>
+                    <div class="small text-muted">5 failed attempts → 15 min lock</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 rounded" style="background:rgba(255,255,255,0.02); border:1px solid rgba(220,38,38,0.2);">
+                    <div class="fw-semibold text-light mb-1">Session Lifetime</div>
+                    <div class="small text-muted">8 hours web cookie / 30 days remember me</div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="admin-btn-primary">← Back to Dashboard</a>
+        </div>
+    </div>
+</div>

@@ -1,10 +1,9 @@
 @{
     ViewData["Title"] = "Dashboard";
-    Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
 <!-- ========================================================
-     Admin Dashboard
+     Admin Dashboard (Areas/Admin)
      ======================================================== -->
 
 <!-- Stats Row -->
@@ -13,40 +12,40 @@
         <div class="admin-stat-card">
             <div class="admin-stat-icon" style="background:rgba(220,38,38,0.15); color:#f87171;">👥</div>
             <div class="admin-stat-info">
-                <div class="admin-stat-value">—</div>
+                <div class="admin-stat-value">2</div>
                 <div class="admin-stat-label">Total Users</div>
             </div>
-            <div class="admin-stat-trend up">Phase 2</div>
+            <div class="admin-stat-trend up">Live</div>
         </div>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="admin-stat-card">
             <div class="admin-stat-icon" style="background:rgba(234,179,8,0.15); color:#fbbf24;">🔐</div>
             <div class="admin-stat-info">
-                <div class="admin-stat-value">—</div>
-                <div class="admin-stat-label">Active Sessions</div>
+                <div class="admin-stat-value">Active</div>
+                <div class="admin-stat-label">Sessions</div>
             </div>
-            <div class="admin-stat-trend up">Phase 2</div>
+            <div class="admin-stat-trend up">Live</div>
         </div>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="admin-stat-card">
             <div class="admin-stat-icon" style="background:rgba(16,185,129,0.15); color:#34d399;">✅</div>
             <div class="admin-stat-info">
-                <div class="admin-stat-value">—</div>
-                <div class="admin-stat-label">MFA Enabled</div>
+                <div class="admin-stat-value">TOTP</div>
+                <div class="admin-stat-label">MFA Service</div>
             </div>
-            <div class="admin-stat-trend up">Phase 2</div>
+            <div class="admin-stat-trend up">Ready</div>
         </div>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="admin-stat-card">
-            <div class="admin-stat-icon" style="background:rgba(139,92,246,0.15); color:#c4b5fd;">⚠️</div>
+            <div class="admin-stat-icon" style="background:rgba(139,92,246,0.15); color:#c4b5fd;">🛡️</div>
             <div class="admin-stat-info">
-                <div class="admin-stat-value">—</div>
-                <div class="admin-stat-label">Failed Logins</div>
+                <div class="admin-stat-value">0</div>
+                <div class="admin-stat-label">Security Alerts</div>
             </div>
-            <div class="admin-stat-trend down">Phase 2</div>
+            <div class="admin-stat-trend up">Normal</div>
         </div>
     </div>
 </div>
@@ -61,7 +60,7 @@
                 <span>⚡ Quick Actions</span>
             </div>
             <div class="admin-panel-body">
-                <a asp-controller="Admin" asp-action="Users" class="admin-action-btn mb-3">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Users" class="admin-action-btn mb-3">
                     <span>👥</span>
                     <div>
                         <div class="fw-semibold">Manage Users</div>
@@ -69,7 +68,7 @@
                     </div>
                     <span class="ms-auto">→</span>
                 </a>
-                <a asp-controller="Admin" asp-action="Reports" class="admin-action-btn mb-3">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Reports" class="admin-action-btn mb-3">
                     <span>📈</span>
                     <div>
                         <div class="fw-semibold">View Reports</div>
@@ -77,7 +76,7 @@
                     </div>
                     <span class="ms-auto">→</span>
                 </a>
-                <a asp-controller="Admin" asp-action="Settings" class="admin-action-btn">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Settings" class="admin-action-btn">
                     <span>⚙️</span>
                     <div>
                         <div class="fw-semibold">System Settings</div>
@@ -99,7 +98,7 @@
             <div class="admin-panel-body">
                 <div class="admin-status-row">
                     <span>🗄️ Database</span>
-                    <span class="admin-badge-green">Connected</span>
+                    <span class="admin-badge-green">Connected (CYHLockerDB)</span>
                 </div>
                 <div class="admin-status-row">
                     <span>🔐 Auth Service</span>
@@ -110,7 +109,7 @@
                     <span class="admin-badge-green">Active</span>
                 </div>
                 <div class="admin-status-row">
-                    <span>🌐 API</span>
+                    <span>🌐 API & Web Areas</span>
                     <span class="admin-badge-green">Running</span>
                 </div>
                 <div class="admin-status-row">
@@ -126,7 +125,6 @@
 <div class="admin-info-bar">
     <span>✅</span>
     <span>
-        <strong>CYHLocker Phase 1 Complete</strong> — BCrypt hashing, Account Lockout, MFA/TOTP, Sessions,
-        Forgot Password, Auto-lock — all wired via Stored Procedures on <strong>CYHLockerDB</strong>
+        <strong>CYHLocker Admin Area Active</strong> — Configured inside <code>Areas/Admin</code> with dedicated layout and CSS.
     </span>
 </div>

@@ -36,19 +36,19 @@
                 <div class="admin-nav-label">Main</div>
 
                 <a class="admin-nav-item @(ViewBag.ActivePage == "Dashboard" ? "active" : "")"
-                   asp-controller="Admin" asp-action="Dashboard">
+                   asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
                     <span class="admin-nav-icon">📊</span>
                     <span class="admin-nav-text">Dashboard</span>
                 </a>
 
                 <a class="admin-nav-item @(ViewBag.ActivePage == "Users" ? "active" : "")"
-                   asp-controller="Admin" asp-action="Users">
+                   asp-area="Admin" asp-controller="Dashboard" asp-action="Users">
                     <span class="admin-nav-icon">👥</span>
                     <span class="admin-nav-text">Users</span>
                 </a>
 
                 <a class="admin-nav-item @(ViewBag.ActivePage == "Reports" ? "active" : "")"
-                   asp-controller="Admin" asp-action="Reports">
+                   asp-area="Admin" asp-controller="Dashboard" asp-action="Reports">
                     <span class="admin-nav-icon">📈</span>
                     <span class="admin-nav-text">Reports</span>
                 </a>
@@ -56,14 +56,21 @@
                 <div class="admin-nav-label mt-3">System</div>
 
                 <a class="admin-nav-item @(ViewBag.ActivePage == "Settings" ? "active" : "")"
-                   asp-controller="Admin" asp-action="Settings">
+                   asp-area="Admin" asp-controller="Dashboard" asp-action="Settings">
                     <span class="admin-nav-icon">⚙️</span>
                     <span class="admin-nav-text">Settings</span>
                 </a>
 
+                <!-- Switch to User view if needed -->
+                <div class="admin-nav-label mt-3">Portal</div>
+                <a class="admin-nav-item" asp-area="User" asp-controller="Dashboard" asp-action="Index">
+                    <span class="admin-nav-icon">👤</span>
+                    <span class="admin-nav-text">User Portal</span>
+                </a>
+
                 <!-- Logout -->
                 <div class="admin-nav-logout">
-                    <form asp-controller="Auth" asp-action="Logout" method="post">
+                    <form asp-area="" asp-controller="Auth" asp-action="Logout" method="post">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="admin-nav-item admin-logout-btn w-100">
                             <span class="admin-nav-icon">🚪</span>
@@ -91,11 +98,11 @@
                 <div class="admin-topbar-right">
                     <div class="admin-topbar-badge">
                         <span class="admin-status-dot"></span>
-                        Admin Panel
+                        Admin Area
                     </div>
                     <div class="admin-user-pill dropdown">
                         <button class="admin-user-btn dropdown-toggle" data-bs-toggle="dropdown">
-                            <span class="admin-avatar">👤</span>
+                            <span class="admin-avatar">👑</span>
                             <span class="admin-user-name">@ViewBag.AdminName</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end admin-dropdown">
@@ -106,7 +113,12 @@
                                 </div>
                             </li>
                             <li>
-                                <form asp-controller="Auth" asp-action="Logout" method="post">
+                                <a class="dropdown-item user-dropdown-item" asp-area="" asp-controller="Account" asp-action="Profile">
+                                    ⚙️ Account Settings
+                                </a>
+                            </li>
+                            <li>
+                                <form asp-area="" asp-controller="Auth" asp-action="Logout" method="post">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="dropdown-item admin-logout-link">🚪 Logout</button>
                                 </form>
@@ -123,7 +135,7 @@
 
             <!-- Footer -->
             <footer class="admin-footer">
-                <span>CYHLocker Admin Panel &copy; 2026</span>
+                <span>CYHLocker Admin Area &copy; 2026</span>
                 <span class="admin-footer-badge">🔐 Secured</span>
             </footer>
         </div>
