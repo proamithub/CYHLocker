@@ -17,7 +17,7 @@ builder.Services.AddAuthentication("CYHCookie")
     {
         opt.LoginPath        = "/Auth/Login";
         opt.LogoutPath       = "/Auth/Logout";
-        opt.AccessDeniedPath = "/Auth/Login";
+        opt.AccessDeniedPath = "/Auth/AccessDenied";
         opt.ExpireTimeSpan   = TimeSpan.FromHours(8);
         opt.Cookie.HttpOnly  = true;
         opt.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;

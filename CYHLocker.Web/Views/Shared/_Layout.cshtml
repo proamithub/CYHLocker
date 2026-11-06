@@ -61,19 +61,17 @@
                     <li><a href="#footer"   class="footer-link" style="color:#cbd5e1; font-size:0.9rem; display:inline;">About</a></li>
                 </ul>
             }
-            else
-            {
-                <ul class="hidden md:flex items-center gap-6 list-none m-0 p-0">
-                    <li><a asp-controller="Home" asp-action="Dashboard" class="footer-link" style="color:#cbd5e1; font-size:0.9rem; display:inline;">Dashboard</a></li>
-                    <li><a asp-controller="Account" asp-action="Profile" class="footer-link" style="color:#cbd5e1; font-size:0.9rem; display:inline;">My Account</a></li>
-                </ul>
-            }
 
             <!-- Right Side Buttons -->
             <div class="flex items-center gap-3">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <!-- User dropdown -->
+                    var isAdmin = User.IsInRole("Admin");
+                    var dashboardController = isAdmin ? "Admin" : "User";
+                    <a asp-controller="@dashboardController" asp-action="Dashboard"
+                       class="btn btn-sm btn-outline-glow hidden sm:inline-block">
+                        📊 Dashboard
+                    </a>
                     <div class="dropdown">
                         <button class="btn btn-sm dropdown-toggle"
                                 style="background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.4); color:#c4b5fd; border-radius:8px;"
@@ -81,6 +79,7 @@
                             👤 @User.Identity.Name
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" style="background:#0f1629; border:1px solid rgba(139,92,246,0.3);">
+                            <li><a class="dropdown-item" style="color:#e2e8f0;" asp-controller="@dashboardController" asp-action="Dashboard">Dashboard</a></li>
                             <li><a class="dropdown-item" style="color:#e2e8f0;" asp-controller="Account" asp-action="Profile">Profile &amp; Settings</a></li>
                             <li><a class="dropdown-item" style="color:#e2e8f0;" asp-controller="Account" asp-action="ChangePassword">Change Password</a></li>
                             <li><hr class="dropdown-divider" style="border-color:rgba(255,255,255,0.1);"></li>
@@ -133,8 +132,14 @@
                 }
                 else
                 {
-                    <a asp-controller="Home" asp-action="Dashboard" class="block py-2 px-2 footer-link">Dashboard</a>
-                    <a asp-controller="Account" asp-action="Profile" class="block py-2 px-2 footer-link">My Account</a>
+                    var isAdmin = User.IsInRole("Admin");
+                    var dashboardController = isAdmin ? "Admin" : "User";
+                    <a asp-controller="@dashboardController" asp-action="Dashboard" class="block py-2 px-2 footer-link">📊 Dashboard</a>
+                    <a asp-controller="Account" asp-action="Profile" class="block py-2 px-2 footer-link">👤 My Account</a>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" class="mt-2">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="block py-2 px-2 text-danger bg-transparent border-0">🚪 Logout</button>
+                    </form>
                 }
             </div>
         </div>

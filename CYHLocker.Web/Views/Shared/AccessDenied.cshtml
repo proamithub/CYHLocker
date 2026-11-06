@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div style="min-height:80vh; display:flex; align-items:center; justify-content:center; padding:2rem;">
+    <div style="text-align:center; max-width:480px;">
+        <div style="font-size:5rem; margin-bottom:1.5rem;">🚫</div>
+        <h1 style="color:#f87171; font-size:2.2rem; font-weight:700; margin-bottom:0.75rem;">Access Denied</h1>
+        <p style="color:#94a3b8; font-size:1rem; line-height:1.7; margin-bottom:2rem;">
+            You don't have permission to access this area.<br/>
+            Please sign in with the correct account.
+        </p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+            <a asp-controller="Auth" asp-action="Login" class="btn btn-glow" style="padding:11px 28px; border-radius:12px;">
+                Sign In Again
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-glow" style="padding:11px 24px; border-radius:12px;">
+                ← Go Home
+            </a>
+        </div>
+    </div>
+</div>

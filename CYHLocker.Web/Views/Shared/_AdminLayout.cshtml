@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — CYHLocker Admin</title>
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <!-- Admin CSS -->
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body>
+
+    <!-- ===================== ADMIN SHELL ===================== -->
+    <div class="admin-shell">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="admin-sidebar" id="adminSidebar">
+
+            <!-- Brand -->
+            <div class="admin-brand">
+                <span class="admin-brand-icon">🔒</span>
+                <span class="admin-brand-text">CYH<span class="admin-brand-accent">Admin</span></span>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="admin-nav">
+                <div class="admin-nav-label">Main</div>
+
+                <a class="admin-nav-item @(ViewBag.ActivePage == "Dashboard" ? "active" : "")"
+                   asp-controller="Admin" asp-action="Dashboard">
+                    <span class="admin-nav-icon">📊</span>
+                    <span class="admin-nav-text">Dashboard</span>
+                </a>
+
+                <a class="admin-nav-item @(ViewBag.ActivePage == "Users" ? "active" : "")"
+                   asp-controller="Admin" asp-action="Users">
+                    <span class="admin-nav-icon">👥</span>
+                    <span class="admin-nav-text">Users</span>
+                </a>
+
+                <a class="admin-nav-item @(ViewBag.ActivePage == "Reports" ? "active" : "")"
+                   asp-controller="Admin" asp-action="Reports">
+                    <span class="admin-nav-icon">📈</span>
+                    <span class="admin-nav-text">Reports</span>
+                </a>
+
+                <div class="admin-nav-label mt-3">System</div>
+
+                <a class="admin-nav-item @(ViewBag.ActivePage == "Settings" ? "active" : "")"
+                   asp-controller="Admin" asp-action="Settings">
+                    <span class="admin-nav-icon">⚙️</span>
+                    <span class="admin-nav-text">Settings</span>
+                </a>
+
+                <!-- Logout -->
+                <div class="admin-nav-logout">
+                    <form asp-controller="Auth" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="admin-nav-item admin-logout-btn w-100">
+                            <span class="admin-nav-icon">🚪</span>
+                            <span class="admin-nav-text">Logout</span>
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- ===== MAIN CONTENT AREA ===== -->
+        <div class="admin-main">
+
+            <!-- Top Header Bar -->
+            <header class="admin-topbar">
+                <!-- Mobile sidebar toggle -->
+                <button class="admin-sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+                    ☰
+                </button>
+
+                <!-- Page Title -->
+                <div class="admin-topbar-title">@ViewData["Title"]</div>
+
+                <!-- Right: Admin Info -->
+                <div class="admin-topbar-right">
+                    <div class="admin-topbar-badge">
+                        <span class="admin-status-dot"></span>
+                        Admin Panel
+                    </div>
+                    <div class="admin-user-pill dropdown">
+                        <button class="admin-user-btn dropdown-toggle" data-bs-toggle="dropdown">
+                            <span class="admin-avatar">👤</span>
+                            <span class="admin-user-name">@ViewBag.AdminName</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end admin-dropdown">
+                            <li>
+                                <div class="px-3 py-2 border-bottom" style="border-color:rgba(220,38,38,0.2) !important;">
+                                    <div class="small fw-semibold" style="color:#fca5a5;">@ViewBag.AdminName</div>
+                                    <div class="small" style="color:#6b7280;">@ViewBag.AdminEmail</div>
+                                </div>
+                            </li>
+                            <li>
+                                <form asp-controller="Auth" asp-action="Logout" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item admin-logout-link">🚪 Logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="admin-content">
+                @RenderBody()
+            </main>
+
+            <!-- Footer -->
+            <footer class="admin-footer">
+                <span>CYHLocker Admin Panel &copy; 2026</span>
+                <span class="admin-footer-badge">🔐 Secured</span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('collapsed');
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

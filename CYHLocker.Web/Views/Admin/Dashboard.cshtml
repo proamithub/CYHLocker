@@ -1,0 +1,132 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- ========================================================
+     Admin Dashboard
+     ======================================================== -->
+
+<!-- Stats Row -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon" style="background:rgba(220,38,38,0.15); color:#f87171;">👥</div>
+            <div class="admin-stat-info">
+                <div class="admin-stat-value">—</div>
+                <div class="admin-stat-label">Total Users</div>
+            </div>
+            <div class="admin-stat-trend up">Phase 2</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon" style="background:rgba(234,179,8,0.15); color:#fbbf24;">🔐</div>
+            <div class="admin-stat-info">
+                <div class="admin-stat-value">—</div>
+                <div class="admin-stat-label">Active Sessions</div>
+            </div>
+            <div class="admin-stat-trend up">Phase 2</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon" style="background:rgba(16,185,129,0.15); color:#34d399;">✅</div>
+            <div class="admin-stat-info">
+                <div class="admin-stat-value">—</div>
+                <div class="admin-stat-label">MFA Enabled</div>
+            </div>
+            <div class="admin-stat-trend up">Phase 2</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon" style="background:rgba(139,92,246,0.15); color:#c4b5fd;">⚠️</div>
+            <div class="admin-stat-info">
+                <div class="admin-stat-value">—</div>
+                <div class="admin-stat-label">Failed Logins</div>
+            </div>
+            <div class="admin-stat-trend down">Phase 2</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions + System Status -->
+<div class="row g-4 mb-4">
+
+    <!-- Quick Actions -->
+    <div class="col-12 col-lg-5">
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <span>⚡ Quick Actions</span>
+            </div>
+            <div class="admin-panel-body">
+                <a asp-controller="Admin" asp-action="Users" class="admin-action-btn mb-3">
+                    <span>👥</span>
+                    <div>
+                        <div class="fw-semibold">Manage Users</div>
+                        <div class="small opacity-75">View, lock, or delete accounts</div>
+                    </div>
+                    <span class="ms-auto">→</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Reports" class="admin-action-btn mb-3">
+                    <span>📈</span>
+                    <div>
+                        <div class="fw-semibold">View Reports</div>
+                        <div class="small opacity-75">Login activity & security logs</div>
+                    </div>
+                    <span class="ms-auto">→</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Settings" class="admin-action-btn">
+                    <span>⚙️</span>
+                    <div>
+                        <div class="fw-semibold">System Settings</div>
+                        <div class="small opacity-75">Configure app-wide options</div>
+                    </div>
+                    <span class="ms-auto">→</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Info -->
+    <div class="col-12 col-lg-7">
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <span>🖥️ System Status</span>
+                <span class="admin-status-pill active">All Systems Operational</span>
+            </div>
+            <div class="admin-panel-body">
+                <div class="admin-status-row">
+                    <span>🗄️ Database</span>
+                    <span class="admin-badge-green">Connected</span>
+                </div>
+                <div class="admin-status-row">
+                    <span>🔐 Auth Service</span>
+                    <span class="admin-badge-green">Active</span>
+                </div>
+                <div class="admin-status-row">
+                    <span>📱 MFA Service</span>
+                    <span class="admin-badge-green">Active</span>
+                </div>
+                <div class="admin-status-row">
+                    <span>🌐 API</span>
+                    <span class="admin-badge-green">Running</span>
+                </div>
+                <div class="admin-status-row">
+                    <span>📋 Session Store</span>
+                    <span class="admin-badge-green">Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Phase Info -->
+<div class="admin-info-bar">
+    <span>✅</span>
+    <span>
+        <strong>CYHLocker Phase 1 Complete</strong> — BCrypt hashing, Account Lockout, MFA/TOTP, Sessions,
+        Forgot Password, Auto-lock — all wired via Stored Procedures on <strong>CYHLockerDB</strong>
+    </span>
+</div>

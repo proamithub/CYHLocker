@@ -21,7 +21,11 @@ public class AuthController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
-        if (User.Identity?.IsAuthenticated == true) return RedirectToAction("Index", "Home");
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            return RedirectByRole(role);
+        }
         ViewBag.ReturnUrl = returnUrl;
         return View();
     }
@@ -52,7 +56,9 @@ public class AuthController : Controller
 
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
-        return RedirectToAction("Index", "Home");
+
+        // Role-based redirect after login
+        return RedirectByRole(result.User!.Role);
     }
 
     // ── MFA CHALLENGE ────────────────────────────────────────────────────────
@@ -90,8 +96,13 @@ public class AuthController : Controller
 
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
-        return RedirectToAction("Index", "Home");
+
+        // Role-based redirect after login
+        return RedirectByRole(result.User!.Role);
     }
+
+    [HttpGet]
+    public IActionResult AccessDenied() => View("~/Views/Shared/AccessDenied.cshtml");
 
     // ── REGISTER ─────────────────────────────────────────────────────────────
     [HttpGet]
@@ -118,7 +129,7 @@ public class AuthController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync("CYHCookie");
-        return RedirectToAction("Login");
+        return RedirectToAction("Index", "Home");
     }
 
     // ── FORGOT PASSWORD ───────────────────────────────────────────────────────
@@ -160,6 +171,13 @@ public class AuthController : Controller
     }
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
+    private IActionResult RedirectByRole(string? role)
+    {
+        if (role == "Admin")
+            return RedirectToAction("Dashboard", "Admin");
+        return RedirectToAction("Dashboard", "User");
+    }
+
     private async Task SignInUserAsync(AuthResponseDto result)
     {
         var claims = new List<Claim>

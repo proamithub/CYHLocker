@@ -1,0 +1,107 @@
+@{
+    ViewData["Title"] = "My Dashboard";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+
+<!-- ========================================================
+     User Dashboard
+     ======================================================== -->
+
+<!-- Welcome Banner -->
+<div class="user-welcome-banner mb-4">
+    <div>
+        <h2 class="user-welcome-title">👋 Welcome back, @ViewBag.UserName!</h2>
+        <p class="user-welcome-sub">@ViewBag.UserEmail</p>
+    </div>
+    <div class="user-session-badge">
+        <span class="user-dot"></span>
+        Session Active
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="user-stat-card">
+            <div class="user-stat-icon teal">🔐</div>
+            <div class="user-stat-num">—</div>
+            <div class="user-stat-lbl">Saved Passwords</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="user-stat-card">
+            <div class="user-stat-icon green">✅</div>
+            <div class="user-stat-num">@(ViewBag.IsMfa == true ? "On" : "Off")</div>
+            <div class="user-stat-lbl">MFA Status</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="user-stat-card">
+            <div class="user-stat-icon purple">🖥️</div>
+            <div class="user-stat-num">1</div>
+            <div class="user-stat-lbl">Active Sessions</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="user-stat-card">
+            <div class="user-stat-icon amber">🛡️</div>
+            <div class="user-stat-num">Safe</div>
+            <div class="user-stat-lbl">Vault Status</div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Cards -->
+<div class="row g-4 mb-4">
+
+    <!-- My Vault -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="user-card h-100">
+            <div class="user-card-icon">🔐</div>
+            <h5 class="user-card-title">My Vault</h5>
+            <p class="user-card-desc">Store, view, and manage all your saved passwords securely.</p>
+            <a asp-controller="User" asp-action="Vault" class="user-btn-primary">Open Vault →</a>
+        </div>
+    </div>
+
+    <!-- Security -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="user-card h-100">
+            <div class="user-card-icon">🛡️</div>
+            <h5 class="user-card-title">Security</h5>
+            <p class="user-card-desc">Manage 2FA, view active sessions, and review login activity.</p>
+            <a asp-controller="User" asp-action="Security" class="user-btn-primary">Security Settings →</a>
+        </div>
+    </div>
+
+    <!-- Profile -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="user-card h-100">
+            <div class="user-card-icon">👤</div>
+            <h5 class="user-card-title">My Profile</h5>
+            <p class="user-card-desc">Update your name, email preferences and account details.</p>
+            <a asp-controller="Account" asp-action="Profile" class="user-btn-primary">Edit Profile →</a>
+        </div>
+    </div>
+</div>
+
+<!-- MFA Warning if not enabled -->
+@if (ViewBag.IsMfa != true)
+{
+    <div class="user-alert-warn">
+        <span>⚠️</span>
+        <div>
+            <strong>Secure your account!</strong> You haven't enabled Multi-Factor Authentication yet.
+            <a asp-controller="Account" asp-action="SetupMfa" style="color:#fbbf24; text-decoration:underline;">Enable MFA now →</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="user-alert-success">
+        <span>✅</span>
+        <div>
+            <strong>Account Secured!</strong> MFA is active on your account. Your vault is protected with 2FA.
+        </div>
+    </div>
+}

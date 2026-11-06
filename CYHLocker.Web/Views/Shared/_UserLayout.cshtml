@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — CYHLocker</title>
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <!-- User CSS -->
+    <link rel="stylesheet" href="~/css/user.css" asp-append-version="true" />
+
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body>
+
+    <!-- ===================== USER SHELL ===================== -->
+    <div class="user-shell">
+
+        <!-- ===== TOP NAVBAR ===== -->
+        <header class="user-navbar" id="userNavbar">
+            <div class="user-nav-inner">
+
+                <!-- Brand -->
+                <a asp-controller="User" asp-action="Dashboard" class="user-brand">
+                    <span class="user-brand-icon">🔒</span>
+                    <span class="user-brand-text">CYH<span class="user-brand-accent">Locker</span></span>
+                </a>
+
+                <!-- Desktop Nav Links -->
+                <nav class="user-nav-links">
+                    <a class="user-nav-link @(ViewBag.ActivePage == "Dashboard" ? "active" : "")"
+                       asp-controller="User" asp-action="Dashboard">
+                        📊 Dashboard
+                    </a>
+                    <a class="user-nav-link @(ViewBag.ActivePage == "Vault" ? "active" : "")"
+                       asp-controller="User" asp-action="Vault">
+                        🔐 My Vault
+                    </a>
+                    <a class="user-nav-link @(ViewBag.ActivePage == "Security" ? "active" : "")"
+                       asp-controller="User" asp-action="Security">
+                        🛡️ Security
+                    </a>
+                </nav>
+
+                <!-- Right: User Info -->
+                <div class="user-nav-right">
+                    <!-- MFA Badge -->
+                    @if (ViewBag.IsMfa == true)
+                    {
+                        <span class="user-mfa-badge">✅ MFA On</span>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="SetupMfa" class="user-mfa-warn">⚠️ Enable MFA</a>
+                    }
+
+                    <!-- User Dropdown -->
+                    <div class="dropdown">
+                        <button class="user-avatar-btn dropdown-toggle" data-bs-toggle="dropdown">
+                            <span class="user-avatar-circle">
+                                @(ViewBag.UserName?.ToString()?[0].ToString().ToUpper() ?? "U")
+                            </span>
+                            <span class="user-avatar-name">@ViewBag.UserName</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end user-dropdown">
+                            <li>
+                                <div class="px-3 py-2 border-bottom" style="border-color:rgba(6,182,212,0.2) !important;">
+                                    <div class="small fw-semibold" style="color:#67e8f9;">@ViewBag.UserName</div>
+                                    <div class="small" style="color:#6b7280;">@ViewBag.UserEmail</div>
+                                </div>
+                            </li>
+                            <li><a class="dropdown-item user-dropdown-item" asp-controller="Account" asp-action="Profile">👤 My Profile</a></li>
+                            <li><a class="dropdown-item user-dropdown-item" asp-controller="Account" asp-action="ChangePassword">🔑 Change Password</a></li>
+                            <li><hr class="dropdown-divider" style="border-color:rgba(6,182,212,0.1);"></li>
+                            <li>
+                                <form asp-controller="Auth" asp-action="Logout" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item user-logout-item">🚪 Logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Mobile toggle -->
+                    <button class="user-mobile-toggle" id="mobileToggle" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+                        ☰
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div class="collapse user-mobile-menu" id="mobileMenu">
+                <a asp-controller="User" asp-action="Dashboard" class="user-mobile-link">📊 Dashboard</a>
+                <a asp-controller="User" asp-action="Vault"     class="user-mobile-link">🔐 My Vault</a>
+                <a asp-controller="User" asp-action="Security"  class="user-mobile-link">🛡️ Security</a>
+                <a asp-controller="Account" asp-action="Profile" class="user-mobile-link">👤 Profile</a>
+                <form asp-controller="Auth" asp-action="Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="user-mobile-link user-mobile-logout">🚪 Logout</button>
+                </form>
+            </div>
+        </header>
+
+        <!-- ===== PAGE CONTENT ===== -->
+        <main class="user-content">
+            @RenderBody()
+        </main>
+
+        <!-- ===== FOOTER ===== -->
+        <footer class="user-footer">
+            <span>© 2026 CYHLocker — Your Secure Vault</span>
+            <span class="user-footer-badge">🔐 AES-256 Encrypted</span>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

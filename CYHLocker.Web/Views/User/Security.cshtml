@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Security";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+<div class="row g-4">
+    <div class="col-12 col-md-6">
+        <div class="user-card h-100">
+            <div class="user-card-icon">📱</div>
+            <h5 class="user-card-title">Two-Factor Authentication</h5>
+            <p class="user-card-desc">
+                @(ViewBag.IsMfa == true
+                    ? "MFA is active. Your account is protected with an authenticator app."
+                    : "Enable MFA to add an extra layer of security to your account.")
+            </p>
+            @if (ViewBag.IsMfa == true)
+            {
+                <span style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#34d399; padding:5px 14px; border-radius:100px; font-size:0.8rem; font-weight:600;">✅ MFA Active</span>
+            }
+            else
+            {
+                <a asp-controller="Account" asp-action="SetupMfa" class="user-btn-primary">Enable MFA →</a>
+            }
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="user-card h-100">
+            <div class="user-card-icon">🔑</div>
+            <h5 class="user-card-title">Change Password</h5>
+            <p class="user-card-desc">Keep your account safe by updating your password regularly.</p>
+            <a asp-controller="Account" asp-action="ChangePassword" class="user-btn-primary">Change Password →</a>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="user-card">
+            <div class="user-card-icon">🖥️</div>
+            <h5 class="user-card-title">Active Sessions</h5>
+            <p class="user-card-desc">View and revoke all sessions from your account.</p>
+            <a asp-controller="Account" asp-action="Profile" class="user-btn-primary">Manage Sessions →</a>
+        </div>
+    </div>
+</div>

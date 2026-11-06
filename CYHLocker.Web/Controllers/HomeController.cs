@@ -1,29 +1,21 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CYHLocker.Web.Controllers;
 
 public class HomeController : Controller
 {
-    // Public landing page — no [Authorize]
+    // Landing page — public, no auth required
+    // If already logged in → redirect to role-specific dashboard
     public IActionResult Index()
     {
-        // If already logged in → go to Dashboard
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Dashboard");
-
-        return View("Landing");
-    }
-
-    // Dashboard requires login
-    [Authorize]
-    public IActionResult Dashboard()
-    {
-        ViewBag.UserName = User.Identity?.Name ?? "User";
-        ViewBag.Email    = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
-        ViewBag.Role     = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value   ?? "User";
-        ViewBag.IsMfa    = User.Claims.Any(c => c.Type == "mfa_enabled" && c.Value == "true");
-        return View("Index"); // existing Index.cshtml = Dashboard
+        {
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "User";
+            if (role == "Admin")
+                return RedirectToAction("Dashboard", "Admin");
+            return RedirectToAction("Dashboard", "User");
+        }
+        return View(); // Views/Home/Index.cshtml = Landing page
     }
 
     public IActionResult Privacy() => View();
