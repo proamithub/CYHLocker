@@ -34,4 +34,50 @@ public class DatabaseLoginIntegrationTest
         Assert.NotNull(response.Token);
         Assert.Equal("admin@cyhlocker.com", response.User?.Email);
     }
+
+    [Fact]
+    public async Task Seed_And_Verify_StandardUser_In_Database()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "ConnectionStrings:DefaultConnection", "Server=localhost;Database=CYHLockerDB;Trusted_Connection=True;TrustServerCertificate=True;" },
+                { "Jwt:Key", "CYHLocker_SuperSecretKey_2026_AmitLab!" },
+                { "Jwt:Issuer", "CYHLocker.API" },
+                { "Jwt:Audience", "CYHLocker.Clients" }
+            })
+            .Build();
+
+        var repo = new UserRepository(config);
+        var authService = new AuthService(repo, config);
+
+        // Check if user@cyhlocker.com exists, if not register/insert
+        await using (var con = new Microsoft.Data.SqlClient.SqlConnection(config.GetConnectionString("DefaultConnection")))
+        {
+            await con.OpenAsync();
+            var checkCmd = new Microsoft.Data.SqlClient.SqlCommand("SELECT COUNT(1) FROM Users_CYH WHERE NormalizedEmail = 'USER@CYHLOCKER.COM'", con);
+            var exists = (int)(await checkCmd.ExecuteScalarAsync() ?? 0) > 0;
+            if (!exists)
+            {
+                var hash = BCrypt.Net.BCrypt.HashPassword("User@123", 11);
+                var insertCmd = new Microsoft.Data.SqlClient.SqlCommand(@"
+                    INSERT INTO Users_CYH (Id, Email, NormalizedEmail, FullName, PasswordHash, Role, IsActive, EmailConfirmed, AccessFailedCount, LockoutEnabled, CreatedAt, UpdatedAt)
+                    VALUES (NEWID(), 'user@cyhlocker.com', 'USER@CYHLOCKER.COM', 'CYH User', @Hash, 'User', 1, 1, 0, 1, SYSUTCDATETIME(), SYSUTCDATETIME())", con);
+                insertCmd.Parameters.AddWithValue("@Hash", hash);
+                await insertCmd.ExecuteNonQueryAsync();
+            }
+        }
+
+        // Now test login with user@cyhlocker.com
+        var response = await authService.LoginAsync(new LoginRequestDto
+        {
+            Email = "user@cyhlocker.com",
+            Password = "User@123"
+        });
+
+        Assert.True(response.Success, $"User Login failed: {response.Message}");
+        Assert.NotNull(response.Token);
+        Assert.Equal("user@cyhlocker.com", response.User?.Email);
+        Assert.Equal("User", response.User?.Role);
+    }
 }
