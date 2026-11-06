@@ -80,4 +80,40 @@ public class DatabaseLoginIntegrationTest
         Assert.Equal("user@cyhlocker.com", response.User?.Email);
         Assert.Equal("User", response.User?.Role);
     }
+
+    [Fact]
+    public async Task Deploy_Phase2_VaultSchema_ToDatabase()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "ConnectionStrings:DefaultConnection", "Server=localhost;Database=CYHLockerDB;Trusted_Connection=True;TrustServerCertificate=True;" }
+            })
+            .Build();
+
+        var scriptPath = @"D:\MyAppAi\CYHLocker\Scripts\05_Vault_Phase2_Schema.sql";
+        var sqlText = await File.ReadAllTextAsync(scriptPath);
+
+        await using var con = new Microsoft.Data.SqlClient.SqlConnection(config.GetConnectionString("DefaultConnection"));
+        await con.OpenAsync();
+
+        // Split by GO
+        var batches = System.Text.RegularExpressions.Regex.Split(sqlText, @"^\s*GO\s*$", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        foreach (var batch in batches)
+        {
+            var trimmed = batch.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed)) continue;
+            await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(trimmed, con);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        // Verify tables exist
+        await using (var checkCmd = new Microsoft.Data.SqlClient.SqlCommand(
+            "SELECT COUNT(1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME IN ('VaultItems_CYH', 'VaultCategories_CYH', 'SecureNotes_CYH', 'VaultAttachments_CYH')", con))
+        {
+            var count = (int)(await checkCmd.ExecuteScalarAsync() ?? 0);
+            Assert.Equal(4, count);
+        }
+    }
 }

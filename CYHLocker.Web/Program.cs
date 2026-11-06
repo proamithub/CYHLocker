@@ -1,3 +1,4 @@
+using CYHLocker.Logic.Encryption;
 using CYHLocker.Logic.Interfaces;
 using CYHLocker.Logic.Services;
 using CYHLocker.Repository.Interfaces;
@@ -10,6 +11,12 @@ builder.Services.AddControllersWithViews();
 // DI — same Logic and Repository as API (reusable!)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService,    AuthService>();
+
+// Vault Core Services
+builder.Services.AddSingleton<ICryptoEngine, AesGcmCryptoEngine>();
+builder.Services.AddSingleton<IPasswordGeneratorService, PasswordGeneratorService>();
+builder.Services.AddScoped<IVaultRepository, VaultRepository>();
+builder.Services.AddScoped<IVaultService,    VaultService>();
 
 // Cookie Auth for web session
 builder.Services.AddAuthentication("CYHCookie")

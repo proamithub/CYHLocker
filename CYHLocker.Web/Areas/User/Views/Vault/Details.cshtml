@@ -1,0 +1,162 @@
+@model CYHLocker.Data.DTOs.VaultItemDto
+@{
+    ViewData["Title"] = Model.Title + " — Vault Item";
+}
+
+<div class="max-w-3xl mx-auto py-3">
+
+    <!-- Back & Action Bar -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <a asp-area="User" asp-controller="Vault" asp-action="Index" class="small text-info text-decoration-none">
+                ← Back to Vault
+            </a>
+            <h2 class="user-welcome-title mt-1">@Model.Title</h2>
+            <p class="user-welcome-sub">@(Model.UrlDomain ?? Model.ItemType)</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-area="User" asp-controller="Vault" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-glow px-3" style="border-radius:10px;">
+                ✏️ Edit
+            </a>
+            <form asp-area="User" asp-controller="Vault" asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Move this item to trash?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-outline-danger px-3" style="border-radius:10px;">
+                    🗑️ Delete
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Credential Card -->
+    <div class="user-card p-4 mb-4">
+
+        <!-- Top Badges -->
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-4 pb-3 border-bottom" style="border-color:rgba(255,255,255,0.08) !important;">
+            <div class="user-stat-icon teal m-0" style="width:36px; height:36px;">
+                @Model.ItemIcon
+            </div>
+            @if (!string.IsNullOrEmpty(Model.CategoryName))
+            {
+                <span class="badge" style="background:rgba(6,182,212,0.15); color:#67e8f9; border:1px solid rgba(6,182,212,0.3); padding:6px 12px; border-radius:10px;">
+                    📁 @Model.CategoryName
+                </span>
+            }
+            <span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); padding:6px 12px; border-radius:10px;">
+                🛡️ @Model.PasswordStrength
+            </span>
+            @if (Model.IsFavorite)
+            {
+                <span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); padding:6px 12px; border-radius:10px;">
+                    ⭐ Favorited
+                </span>
+            }
+        </div>
+
+        <!-- Username / Email -->
+        <div class="mb-4">
+            <label class="text-muted small fw-semibold text-uppercase" style="letter-spacing:0.8px;">Username / Email</label>
+            <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                <span class="text-light fw-medium font-monospace" id="usernameText">@(Model.Username ?? "(None)")</span>
+                @if (!string.IsNullOrEmpty(Model.Username))
+                {
+                    <button type="button" class="btn btn-sm btn-outline-glow copy-btn py-1 px-3" data-copy="@Model.Username">
+                        📋 Copy Username
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Encrypted Password -->
+        <div class="mb-4">
+            <label class="text-muted small fw-semibold text-uppercase" style="letter-spacing:0.8px;">Password</label>
+            <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                <span class="text-warning font-monospace fw-bold" id="passDisplay">••••••••••••••••</span>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary text-light py-1 px-2" id="toggleRevealBtn">
+                        👁️ Show
+                    </button>
+                    <button type="button" class="btn btn-sm btn-glow copy-btn py-1 px-3" data-copy="@Model.Password">
+                        🔑 Copy Password
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Website URL -->
+        @if (!string.IsNullOrEmpty(Model.Url))
+        {
+            <div class="mb-4">
+                <label class="text-muted small fw-semibold text-uppercase" style="letter-spacing:0.8px;">Website URL</label>
+                <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                    <span class="text-info text-truncate me-2">@Model.Url</span>
+                    <a href="@Model.Url" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-glow py-1 px-3 text-nowrap">
+                        Launch Site ↗
+                    </a>
+                </div>
+            </div>
+        }
+
+        <!-- Notes -->
+        @if (!string.IsNullOrEmpty(Model.Notes))
+        {
+            <div class="mb-4">
+                <label class="text-muted small fw-semibold text-uppercase" style="letter-spacing:0.8px;">Encrypted Notes</label>
+                <div class="p-3 rounded mt-1" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); white-space:pre-wrap; color:#cbd5e1; font-size:0.9rem;">@Model.Notes</div>
+            </div>
+        }
+
+        <!-- Metadata Timestamps -->
+        <div class="pt-3 border-top d-flex flex-wrap justify-content-between text-muted small" style="border-color:rgba(255,255,255,0.06) !important; font-size:0.75rem;">
+            <span>Created: @Model.CreatedAt.ToString("g")</span>
+            <span>Last Modified: @Model.UpdatedAt.ToString("g")</span>
+            <span>Encryption: AES-256-GCM (Zero-Knowledge)</span>
+        </div>
+
+    </div>
+</div>
+
+<!-- Toast notification for copy to clipboard -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="copyToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                ✓ Copied to clipboard! (Clears in 30s)
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const realPassword = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Password ?? ""));
+        const passDisplay = document.getElementById('passDisplay');
+        const revealBtn = document.getElementById('toggleRevealBtn');
+        let revealed = false;
+
+        revealBtn.addEventListener('click', () => {
+            revealed = !revealed;
+            if (revealed) {
+                passDisplay.textContent = realPassword;
+                revealBtn.textContent = '🙈 Hide';
+            } else {
+                passDisplay.textContent = '••••••••••••••••';
+                revealBtn.textContent = '👁️ Show';
+            }
+        });
+
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const text = this.getAttribute('data-copy');
+                if (text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        const toastEl = document.getElementById('copyToast');
+                        const toast = new bootstrap.Toast(toastEl, { delay: 2000 });
+                        toast.show();
+                    });
+                }
+            });
+        });
+    </script>
+}

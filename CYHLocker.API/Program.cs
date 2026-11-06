@@ -1,4 +1,5 @@
 using System.Text;
+using CYHLocker.Logic.Encryption;
 using CYHLocker.Logic.Interfaces;
 using CYHLocker.Logic.Services;
 using CYHLocker.Repository.Interfaces;
@@ -15,6 +16,12 @@ builder.Services.AddOpenApi();
 // DI Registration
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService,    AuthService>();
+
+// Vault Core Services
+builder.Services.AddSingleton<ICryptoEngine, AesGcmCryptoEngine>();
+builder.Services.AddSingleton<IPasswordGeneratorService, PasswordGeneratorService>();
+builder.Services.AddScoped<IVaultRepository, VaultRepository>();
+builder.Services.AddScoped<IVaultService,    VaultService>();
 
 // JWT Auth
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "CYHLocker_SuperSecretKey_2026_AmitLab!";

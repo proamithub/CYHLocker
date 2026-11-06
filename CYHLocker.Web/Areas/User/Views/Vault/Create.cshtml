@@ -1,0 +1,298 @@
+@model CYHLocker.Data.DTOs.CreateVaultItemRequestDto
+@{
+    ViewData["Title"] = "Add New Credential";
+    var categories = ViewBag.Categories as List<CYHLocker.Data.DTOs.VaultCategoryDto> ?? new();
+}
+
+<div class="max-w-4xl mx-auto py-3">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <a asp-area="User" asp-controller="Vault" asp-action="Index" class="small text-info text-decoration-none">
+                ← Back to Vault
+            </a>
+            <h2 class="user-welcome-title mt-1">➕ Add New Credential</h2>
+            <p class="user-welcome-sub">All sensitive fields are encrypted with AES-256-GCM before saving</p>
+        </div>
+        <div class="trust-badge">
+            <span class="user-dot"></span>
+            Zero-Knowledge Enforced
+        </div>
+    </div>
+
+    <form asp-area="User" asp-controller="Vault" asp-action="Create" method="post" id="createVaultForm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-4">
+
+            <!-- Left Column: Primary Details -->
+            <div class="col-12 col-lg-8">
+                <div class="user-card p-4">
+
+                    <!-- Title & Item Type -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-8">
+                            <label asp-for="Title" class="form-label auth-label">Account / Service Title *</label>
+                            <input asp-for="Title" class="form-control auth-input" placeholder="e.g. Google Personal, GitHub, Netflix, SBI Bank" required autofocus />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="ItemType" class="form-label auth-label">Item Type</label>
+                            <select asp-for="ItemType" class="form-select auth-input">
+                                <option value="Login">🔑 Login</option>
+                                <option value="Card">💳 Credit / Debit Card</option>
+                                <option value="Identity">🪪 Identity / Passport</option>
+                                <option value="ApiKey">🔐 API Key / Token</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="mb-3">
+                        <label asp-for="CategoryId" class="form-label auth-label">Folder / Category</label>
+                        <select asp-for="CategoryId" class="form-select auth-input">
+                            <option value="">(No Category / Uncategorized)</option>
+                            @foreach (var cat in categories)
+                            {
+                                <option value="@cat.Id">@cat.Icon @cat.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Username / Email -->
+                    <div class="mb-3">
+                        <label asp-for="Username" class="form-label auth-label">Username / Email ID</label>
+                        <input asp-for="Username" class="form-control auth-input" placeholder="name@example.com or username" />
+                        <span asp-validation-for="Username" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Password with Generator -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label asp-for="Password" class="form-label auth-label m-0">Password / Secret Key *</label>
+                            <button type="button" class="btn btn-sm btn-link text-info p-0 text-decoration-none fw-semibold" id="openGenBtn">
+                                ⚡ Generate Strong Password
+                            </button>
+                        </div>
+                        <div class="position-relative">
+                            <input asp-for="Password" id="passwordInput" type="password" class="form-control auth-input font-monospace pe-5" placeholder="Enter password or click Generate" required />
+                            <button type="button" class="btn btn-sm position-absolute top-50 end-0 translate-middle-y me-2 border-0 bg-transparent text-muted" id="togglePasswordBtn">
+                                👁️
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+
+                        <!-- Password Strength Bar -->
+                        <div class="mt-2">
+                            <div class="progress" style="height: 5px; background: rgba(255,255,255,0.08);">
+                                <div id="strengthBar" class="progress-bar bg-danger" style="width: 25%"></div>
+                            </div>
+                            <small id="strengthText" class="text-muted mt-1 d-block" style="font-size:0.75rem;">Strength: Enter password</small>
+                        </div>
+                    </div>
+
+                    <!-- Website URL (for Auto-Fill!) -->
+                    <div class="mb-3">
+                        <label asp-for="Url" class="form-label auth-label">Website / Login URL</label>
+                        <input asp-for="Url" class="form-control auth-input" placeholder="https://github.com/login" />
+                        <small class="text-muted" style="font-size:0.75rem;">
+                            💡 When you visit this website in browser or mobile, CYHLocker will automatically suggest filling this login!
+                        </small>
+                    </div>
+
+                    <!-- Secure Notes -->
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label auth-label">Secure Notes / Recovery Codes</label>
+                        <textarea asp-for="Notes" rows="3" class="form-control auth-input" placeholder="Recovery codes, PIN, security questions, or notes (encrypted)..."></textarea>
+                    </div>
+
+                    <!-- Favorite checkbox -->
+                    <div class="form-check form-switch mb-4">
+                        <input asp-for="IsFavorite" class="form-check-input" type="checkbox" id="favSwitch">
+                        <label class="form-check-label text-light small" for="favSwitch">Pin as Favorite (shows at top of vault)</label>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-glow px-4 py-2" style="border-radius:12px;">
+                            🔒 Encrypt &amp; Save
+                        </button>
+                        <a asp-area="User" asp-controller="Vault" asp-action="Index" class="btn btn-outline-secondary px-4 py-2" style="border-radius:12px;">
+                            Cancel
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Right Column: Integrated Live Password Generator & Security Tips -->
+            <div class="col-12 col-lg-4">
+                
+                <!-- Live Password Generator Box -->
+                <div class="user-card p-4 mb-4" id="generatorCard">
+                    <h5 class="fw-bold text-light mb-3 d-flex align-items-center gap-2">
+                        <span>⚡</span> Password Generator
+                    </h5>
+
+                    <!-- Generated Result Box -->
+                    <div class="p-3 rounded mb-3 position-relative" style="background:rgba(6,182,212,0.08); border:1px solid rgba(6,182,212,0.3);">
+                        <div id="genResult" class="font-monospace text-info fw-bold text-break" style="font-size:0.95rem;">
+                            Ready to generate
+                        </div>
+                    </div>
+
+                    <!-- Length Slider -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between text-muted small mb-1">
+                            <span>Length:</span>
+                            <span id="lengthVal" class="text-info fw-bold">18</span>
+                        </div>
+                        <input type="range" class="form-range" id="lengthSlider" min="8" max="64" value="18">
+                    </div>
+
+                    <!-- Options -->
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="genUpper" checked>
+                            <label class="form-check-label text-muted small" for="genUpper">A-Z (Uppercase)</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="genLower" checked>
+                            <label class="form-check-label text-muted small" for="genLower">a-z (Lowercase)</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="genDigits" checked>
+                            <label class="form-check-label text-muted small" for="genDigits">0-9 (Numbers)</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="genSymbols" checked>
+                            <label class="form-check-label text-muted small" for="genSymbols">!@@#$% (Symbols)</label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-glow" id="btnRefreshGen">
+                            🔄 Re-roll Password
+                        </button>
+                        <button type="button" class="btn btn-sm btn-glow" id="btnUseGen">
+                            ✓ Use This Password
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Encryption Assurance Card -->
+                <div class="glass-card p-3" style="border-color:rgba(16,185,129,0.25);">
+                    <div class="d-flex gap-2">
+                        <span style="font-size:1.5rem;">🛡️</span>
+                        <div>
+                            <div class="fw-semibold text-light small">Zero-Knowledge AES-256-GCM</div>
+                            <div class="text-muted" style="font-size:0.75rem; line-height:1.5;">
+                                This entry is authenticated with an authenticated tag (AEAD). Neither server administrators nor hackers can decrypt this data.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Password visibility toggle
+        const toggleBtn = document.getElementById('togglePasswordBtn');
+        const passInput = document.getElementById('passwordInput');
+        toggleBtn.addEventListener('click', () => {
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+            } else {
+                passInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+            }
+        });
+
+        // Generator logic
+        const slider = document.getElementById('lengthSlider');
+        const lengthVal = document.getElementById('lengthVal');
+        const genResult = document.getElementById('genResult');
+
+        function fetchGeneratedPassword() {
+            const len = slider.value;
+            const upper = document.getElementById('genUpper').checked;
+            const lower = document.getElementById('genLower').checked;
+            const digits = document.getElementById('genDigits').checked;
+            const symbols = document.getElementById('genSymbols').checked;
+
+            fetch(`/User/Vault/GeneratePassword?length=${len}&uppercase=${upper}&lowercase=${lower}&numbers=${digits}&symbols=${symbols}`)
+                .then(res => res.json())
+                .then(data => {
+                    genResult.textContent = data.password;
+                    updateStrengthUI(data.password, data.strength);
+                });
+        }
+
+        slider.addEventListener('input', () => {
+            lengthVal.textContent = slider.value;
+            fetchGeneratedPassword();
+        });
+
+        document.getElementById('genUpper').addEventListener('change', fetchGeneratedPassword);
+        document.getElementById('genLower').addEventListener('change', fetchGeneratedPassword);
+        document.getElementById('genDigits').addEventListener('change', fetchGeneratedPassword);
+        document.getElementById('genSymbols').addEventListener('change', fetchGeneratedPassword);
+        document.getElementById('btnRefreshGen').addEventListener('click', fetchGeneratedPassword);
+
+        // Apply generated password into form
+        document.getElementById('btnUseGen').addEventListener('click', () => {
+            passInput.value = genResult.textContent;
+            passInput.type = 'text';
+            toggleBtn.textContent = '🙈';
+            evaluateManualInput(passInput.value);
+        });
+
+        document.getElementById('openGenBtn').addEventListener('click', () => {
+            fetchGeneratedPassword();
+            passInput.value = genResult.textContent;
+            passInput.type = 'text';
+            toggleBtn.textContent = '🙈';
+        });
+
+        // Real-time strength evaluator for manual input
+        passInput.addEventListener('input', () => {
+            evaluateManualInput(passInput.value);
+        });
+
+        function evaluateManualInput(val) {
+            let strength = 'Weak';
+            let percent = 25;
+            let color = 'bg-danger';
+
+            if (val.length >= 14 && /[A-Z]/.test(val) && /[0-9]/.test(val) && /[^a-zA-Z0-9]/.test(val)) {
+                strength = 'Very Strong';
+                percent = 100;
+                color = 'bg-info';
+            } else if (val.length >= 10 && (/[A-Z]/.test(val) || /[0-9]/.test(val))) {
+                strength = 'Strong';
+                percent = 75;
+                color = 'bg-success';
+            } else if (val.length >= 8) {
+                strength = 'Fair';
+                percent = 50;
+                color = 'bg-warning';
+            }
+
+            const bar = document.getElementById('strengthBar');
+            bar.className = 'progress-bar ' + color;
+            bar.style.width = percent + '%';
+            document.getElementById('strengthText').textContent = 'Strength: ' + strength;
+        }
+
+        // Run once on load
+        fetchGeneratedPassword();
+    </script>
+}

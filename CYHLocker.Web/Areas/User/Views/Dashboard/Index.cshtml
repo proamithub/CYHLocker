@@ -1,5 +1,7 @@
 @{
     ViewData["Title"] = "My Dashboard";
+    var totalVault = ViewBag.TotalVaultItems ?? 0;
+    var recentItems = ViewBag.RecentItems as List<CYHLocker.Data.DTOs.VaultItemDto> ?? new();
 }
 
 <!-- ========================================================
@@ -12,9 +14,14 @@
         <h2 class="user-welcome-title">👋 Welcome back, @ViewBag.UserName!</h2>
         <p class="user-welcome-sub">@ViewBag.UserEmail</p>
     </div>
-    <div class="user-session-badge">
-        <span class="user-dot"></span>
-        Session Active
+    <div class="d-flex align-items-center gap-2">
+        <a asp-area="User" asp-controller="Vault" asp-action="Create" class="btn btn-sm btn-glow px-3 py-2" style="border-radius:10px;">
+            ➕ Add Password
+        </a>
+        <div class="user-session-badge">
+            <span class="user-dot"></span>
+            Session Active
+        </div>
     </div>
 </div>
 
@@ -23,7 +30,7 @@
     <div class="col-6 col-lg-3">
         <div class="user-stat-card">
             <div class="user-stat-icon teal">🔐</div>
-            <div class="user-stat-num">0</div>
+            <div class="user-stat-num">@totalVault</div>
             <div class="user-stat-lbl">Saved Passwords</div>
         </div>
     </div>
@@ -50,6 +57,40 @@
     </div>
 </div>
 
+<!-- Recent Credentials / Quick Access -->
+@if (recentItems.Count > 0)
+{
+    <div class="glass-card p-4 mb-4" style="border-color:rgba(6,182,212,0.2);">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-light mb-0">⚡ Quick Access Passwords</h5>
+            <a asp-area="User" asp-controller="Vault" asp-action="Index" class="small text-info text-decoration-none">
+                View All (@totalVault) →
+            </a>
+        </div>
+        <div class="row g-3">
+            @foreach (var item in recentItems)
+            {
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);">
+                        <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                            <span>@item.ItemIcon</span>
+                            <div class="text-truncate">
+                                <a asp-area="User" asp-controller="Vault" asp-action="Details" asp-route-id="@item.Id" class="fw-semibold text-light text-decoration-none small d-block text-truncate">
+                                    @item.Title
+                                </a>
+                                <small class="text-muted" style="font-size:0.75rem;">@(item.Username ?? item.UrlDomain)</small>
+                            </div>
+                        </div>
+                        <a asp-area="User" asp-controller="Vault" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-glow py-0 px-2 small">
+                            Open
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
 <!-- Action Cards -->
 <div class="row g-4 mb-4">
 
@@ -57,8 +98,8 @@
     <div class="col-12 col-sm-6 col-lg-4">
         <div class="user-card h-100">
             <div class="user-card-icon">🔐</div>
-            <h5 class="user-card-title">My Vault</h5>
-            <p class="user-card-desc">Store, view, and manage all your saved passwords securely.</p>
+            <h5 class="user-card-title">Encrypted Vault</h5>
+            <p class="user-card-desc">Store, organize by category, search and manage all your passwords.</p>
             <a asp-area="User" asp-controller="Vault" asp-action="Index" class="user-btn-primary">Open Vault →</a>
         </div>
     </div>
@@ -67,7 +108,7 @@
     <div class="col-12 col-sm-6 col-lg-4">
         <div class="user-card h-100">
             <div class="user-card-icon">🛡️</div>
-            <h5 class="user-card-title">Security</h5>
+            <h5 class="user-card-title">Security Center</h5>
             <p class="user-card-desc">Manage 2FA, view active sessions, and review login activity.</p>
             <a asp-area="User" asp-controller="Security" asp-action="Index" class="user-btn-primary">Security Settings →</a>
         </div>

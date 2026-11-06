@@ -1,0 +1,102 @@
+@model CYHLocker.Data.DTOs.UpdateVaultItemRequestDto
+@{
+    ViewData["Title"] = "Edit Credential";
+    var categories = ViewBag.Categories as List<CYHLocker.Data.DTOs.VaultCategoryDto> ?? new();
+}
+
+<div class="max-w-4xl mx-auto py-3">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <a asp-area="User" asp-controller="Vault" asp-action="Details" asp-route-id="@Model.Id" class="small text-info text-decoration-none">
+                ← Back to Details
+            </a>
+            <h2 class="user-welcome-title mt-1">✏️ Edit Credential</h2>
+            <p class="user-welcome-sub">Updating will re-encrypt all fields with a new nonce</p>
+        </div>
+    </div>
+
+    <form asp-area="User" asp-controller="Vault" asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="user-card p-4">
+
+            <!-- Title & Item Type -->
+            <div class="row g-3 mb-3">
+                <div class="col-12 col-md-8">
+                    <label asp-for="Title" class="form-label auth-label">Account / Service Title *</label>
+                    <input asp-for="Title" class="form-control auth-input" required />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="ItemType" class="form-label auth-label">Item Type</label>
+                    <select asp-for="ItemType" class="form-select auth-input">
+                        <option value="Login">🔑 Login</option>
+                        <option value="Card">💳 Credit / Debit Card</option>
+                        <option value="Identity">🪪 Identity / Passport</option>
+                        <option value="ApiKey">🔐 API Key / Token</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Category -->
+            <div class="mb-3">
+                <label asp-for="CategoryId" class="form-label auth-label">Folder / Category</label>
+                <select asp-for="CategoryId" class="form-select auth-input">
+                    <option value="">(No Category / Uncategorized)</option>
+                    @foreach (var cat in categories)
+                    {
+                        <option value="@cat.Id">@cat.Icon @cat.Name</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Username / Email -->
+            <div class="mb-3">
+                <label asp-for="Username" class="form-label auth-label">Username / Email ID</label>
+                <input asp-for="Username" class="form-control auth-input" />
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label auth-label">Password / Secret Key *</label>
+                <div class="position-relative">
+                    <input asp-for="Password" id="passwordInput" type="text" class="form-control auth-input font-monospace pe-5" required />
+                </div>
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <!-- Website URL -->
+            <div class="mb-3">
+                <label asp-for="Url" class="form-label auth-label">Website URL</label>
+                <input asp-for="Url" class="form-control auth-input" />
+            </div>
+
+            <!-- Secure Notes -->
+            <div class="mb-3">
+                <label asp-for="Notes" class="form-label auth-label">Secure Notes</label>
+                <textarea asp-for="Notes" rows="3" class="form-control auth-input"></textarea>
+            </div>
+
+            <!-- Favorite switch -->
+            <div class="form-check form-switch mb-4">
+                <input asp-for="IsFavorite" class="form-check-input" type="checkbox" id="favSwitch">
+                <label class="form-check-label text-light small" for="favSwitch">Pin as Favorite</label>
+            </div>
+
+            <!-- Submit -->
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-glow px-4 py-2" style="border-radius:12px;">
+                    Save Changes
+                </button>
+                <a asp-area="User" asp-controller="Vault" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary px-4 py-2" style="border-radius:12px;">
+                    Cancel
+                </a>
+            </div>
+
+        </div>
+    </form>
+</div>
