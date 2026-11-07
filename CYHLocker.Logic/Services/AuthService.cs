@@ -16,13 +16,19 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository       _repo;
     private readonly IConfiguration        _config;
+    private readonly IAdminRepository?     _adminRepo;
     private readonly ILogger<AuthService>? _logger;
 
-    public AuthService(IUserRepository repo, IConfiguration config, ILogger<AuthService>? logger = null)
+    public AuthService(
+        IUserRepository repo, 
+        IConfiguration config, 
+        IAdminRepository? adminRepo = null, 
+        ILogger<AuthService>? logger = null)
     {
-        _repo   = repo;
-        _config = config;
-        _logger = logger;
+        _repo      = repo;
+        _config    = config;
+        _adminRepo = adminRepo;
+        _logger    = logger;
     }
 
     // ── LOGIN ────────────────────────────────────────────────────────────────
@@ -69,6 +75,11 @@ public class AuthService : IAuthService
         var sessionId = await _repo.LoginSuccessAsync(req.Email, clientIp, userAgent);
         var token     = GenerateJwt(user, sessionId);
         _logger?.LogInformation("[CYH] Login success: {Email}", req.Email);
+
+        if (_adminRepo != null)
+        {
+            await _adminRepo.LogAuditAsync(user.UserId, "AUTH_SUCCESS", clientIp, $"User {req.Email} authenticated via BCrypt");
+        }
 
         return new AuthResponseDto { Success = true, Message = "Login successful.", Token = token, User = user, SessionId = sessionId };
     }

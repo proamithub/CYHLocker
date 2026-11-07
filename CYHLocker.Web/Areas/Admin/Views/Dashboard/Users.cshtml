@@ -1,43 +1,172 @@
+@model List<CYHLocker.Data.DTOs.AdminUserListItemDto>
 @{
-    ViewData["Title"] = "Users Management";
+    ViewData["Title"] = "User Accounts Management";
+    var search = ViewBag.SearchQuery as string;
 }
-<div class="admin-panel">
-    <div class="admin-panel-header">
-        <span>👥 User Management</span>
-        <span class="admin-status-pill active">CYHLockerDB</span>
+
+<div class="admin-panel mb-4">
+    <!-- Panel Header with Search & Exports -->
+    <div class="admin-panel-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <span>👥 User Accounts Governance</span>
+            <span class="admin-status-pill active">@Model.Count Accounts</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="ExportUsers" asp-route-format="xlsx" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1" style="border-radius:8px;">
+                📊 Excel (.xlsx)
+            </a>
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="ExportUsers" asp-route-format="csv" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" style="border-radius:8px;">
+                📄 CSV
+            </a>
+        </div>
     </div>
-    <div class="admin-panel-body">
-        <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0" style="background:transparent;">
-                <thead>
-                    <tr style="border-bottom:1px solid rgba(220,38,38,0.2);">
-                        <th>Role</th>
-                        <th>Email</th>
-                        <th>Full Name</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><span class="badge" style="background:rgba(220,38,38,0.2); color:#fca5a5; border:1px solid rgba(220,38,38,0.4);">Admin</span></td>
-                        <td>admin@cyhlocker.com</td>
-                        <td>System Admin</td>
-                        <td><span class="admin-badge-green">Active</span></td>
-                        <td><span class="small text-muted">Protected</span></td>
-                    </tr>
-                    <tr>
-                        <td><span class="badge" style="background:rgba(6,182,212,0.2); color:#67e8f9; border:1px solid rgba(6,182,212,0.4);">User</span></td>
-                        <td>user@cyhlocker.com</td>
-                        <td>CYH User</td>
-                        <td><span class="admin-badge-green">Active</span></td>
-                        <td><button class="btn btn-sm btn-outline-danger py-0 px-2">Manage</button></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="mt-4">
-            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="admin-btn-primary">← Back to Dashboard</a>
-        </div>
+
+    <!-- Filter Bar -->
+    <div class="p-3 border-bottom" style="border-color:rgba(220,38,38,0.2) !important; background:rgba(7,11,22,0.4);">
+        <form method="get" asp-area="Admin" asp-controller="Dashboard" asp-action="Users" class="row g-2 align-items-center">
+            <div class="col-12 col-md-8">
+                <input type="text" name="q" value="@search" class="form-control auth-input" placeholder="Search users by full name or email address..." />
+            </div>
+            <div class="col-12 col-md-4 d-flex gap-2">
+                <button type="submit" class="admin-btn-primary py-2 px-4 flex-grow-1">Search</button>
+                @if (!string.IsNullOrEmpty(search))
+                {
+                    <a asp-area="Admin" asp-controller="Dashboard" asp-action="Users" class="btn btn-sm btn-outline-secondary py-2">Reset</a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <!-- Users Table -->
+    <div class="admin-panel-body p-0">
+        @if (Model.Count == 0)
+        {
+            <div class="text-center py-5 text-muted">
+                <div style="font-size:3rem;" class="mb-2">🔍</div>
+                <h6 class="fw-bold text-light">No Users Found</h6>
+                <p class="small text-muted">No user accounts match your search query.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle" style="background:transparent;">
+                    <thead>
+                        <tr style="border-bottom:1px solid rgba(220,38,38,0.25); color:#94a3b8; font-size:0.85rem;">
+                            <th>Role</th>
+                            <th>User Profile</th>
+                            <th>Status</th>
+                            <th>Lockout State</th>
+                            <th>Vault Items</th>
+                            <th>Registration</th>
+                            <th>Last Login</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in Model)
+                        {
+                            <tr>
+                                <!-- Role -->
+                                <td>
+                                    @if (u.Role == "Admin")
+                                    {
+                                        <span class="badge" style="background:rgba(220,38,38,0.2); color:#fca5a5; border:1px solid rgba(220,38,38,0.4); padding:5px 10px; border-radius:8px;">
+                                            👑 Admin
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background:rgba(6,182,212,0.15); color:#67e8f9; border:1px solid rgba(6,182,212,0.3); padding:5px 10px; border-radius:8px;">
+                                            👤 User
+                                        </span>
+                                    }
+                                </td>
+
+                                <!-- User Profile -->
+                                <td>
+                                    <div class="fw-bold text-light">@u.FullName</div>
+                                    <div class="small text-muted font-monospace">@u.Email</div>
+                                </td>
+
+                                <!-- Status -->
+                                <td>
+                                    <form method="post" asp-area="Admin" asp-controller="Dashboard" asp-action="ToggleStatus" asp-route-id="@u.Id" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm py-0 px-2 text-decoration-none border-0" title="Click to toggle active state">
+                                            @if (u.IsActive)
+                                            {
+                                                <span class="admin-badge-green">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Disabled</span>
+                                            }
+                                        </button>
+                                    </form>
+                                </td>
+
+                                <!-- Lockout -->
+                                <td>
+                                    <form method="post" asp-area="Admin" asp-controller="Dashboard" asp-action="ToggleLock" asp-route-id="@u.Id" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm py-0 px-2 text-decoration-none border-0" title="Click to toggle lock state">
+                                            @if (u.IsLocked)
+                                            {
+                                                <span class="badge bg-danger">🔒 Locked</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge" style="background:rgba(16,185,129,0.12); color:#34d399; border:1px solid rgba(16,185,129,0.25);">
+                                                    ✓ Normal
+                                                </span>
+                                            }
+                                        </button>
+                                    </form>
+                                </td>
+
+                                <!-- Vault Items -->
+                                <td>
+                                    <span class="badge bg-dark text-info border border-secondary" style="font-size:0.8rem; padding:5px 10px;">
+                                        🔐 @u.TotalVaultItems
+                                    </span>
+                                </td>
+
+                                <!-- Registration Date -->
+                                <td class="small text-muted">
+                                    @u.CreatedAt.ToString("dd MMM yyyy")
+                                </td>
+
+                                <!-- Last Login -->
+                                <td class="small text-muted">
+                                    @(u.LastLoginAt.HasValue ? u.LastLoginAt.Value.ToString("dd MMM, hh:mm tt") : "Never")
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <!-- Role Toggle Form -->
+                                        <form method="post" asp-area="Admin" asp-controller="Dashboard" asp-action="ChangeRole" asp-route-id="@u.Id" asp-route-role="@(u.Role == "Admin" ? "User" : "Admin")">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-info py-1 px-2" style="font-size:0.75rem; border-radius:6px;" title="Promote or Demote Role">
+                                                Role: @(u.Role == "Admin" ? "Demote" : "Promote")
+                                            </button>
+                                        </form>
+
+                                        <!-- Delete User Form -->
+                                        <form method="post" asp-area="Admin" asp-controller="Dashboard" asp-action="DeleteUser" asp-route-id="@u.Id" onsubmit="return confirm('PERMANENT DELETION: Are you sure you want to permanently erase @u.Email and all their vault passwords?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:0.75rem; border-radius:6px;" title="Delete User">
+                                                🗑️ Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>

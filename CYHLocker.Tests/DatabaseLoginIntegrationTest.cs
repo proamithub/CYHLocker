@@ -151,4 +151,39 @@ public class DatabaseLoginIntegrationTest
             Assert.Equal(3, count);
         }
     }
+
+    [Fact]
+    public async Task Deploy_Phase3_AdminAuditSchema_ToDatabase()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "ConnectionStrings:DefaultConnection", "Server=localhost;Database=CYHLockerDB;Trusted_Connection=True;TrustServerCertificate=True;" }
+            })
+            .Build();
+
+        var scriptPath = @"D:\MyAppAi\CYHLocker\Scripts\07_Admin_Management_And_Audit.sql";
+        var sqlText = await File.ReadAllTextAsync(scriptPath);
+
+        await using var con = new Microsoft.Data.SqlClient.SqlConnection(config.GetConnectionString("DefaultConnection"));
+        await con.OpenAsync();
+
+        var batches = System.Text.RegularExpressions.Regex.Split(sqlText, @"^\s*GO\s*$", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        foreach (var batch in batches)
+        {
+            var trimmed = batch.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed)) continue;
+            await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(trimmed, con);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        // Verify stored procedures exist
+        await using (var checkCmd = new Microsoft.Data.SqlClient.SqlCommand(
+            "SELECT COUNT(1) FROM sys.objects WHERE type = 'P' AND name IN ('ManageAuditLogs_CYH', 'ManageAdminUsers_CYH')", con))
+        {
+            var count = (int)(await checkCmd.ExecuteScalarAsync() ?? 0);
+            Assert.Equal(2, count);
+        }
+    }
 }

@@ -19,6 +19,11 @@ builder.Services.AddSingleton<IFaviconService, FaviconService>();
 builder.Services.AddScoped<IVaultRepository, VaultRepository>();
 builder.Services.AddScoped<IVaultService,    VaultService>();
 
+// Admin & Reporting Services
+builder.Services.AddScoped<IAdminRepository,  AdminRepository>();
+builder.Services.AddScoped<IAdminService,     AdminService>();
+builder.Services.AddScoped<IReportingService, ReportingService>();
+
 // Cookie Auth for web session
 builder.Services.AddAuthentication("CYHCookie")
     .AddCookie("CYHCookie", opt =>

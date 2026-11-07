@@ -1,18 +1,116 @@
+@model List<CYHLocker.Data.DTOs.AuditLogEntryDto>
 @{
-    ViewData["Title"] = "Reports & Logs";
+    ViewData["Title"] = "Security Reports & Audit Stream";
+    var selectedEvent = ViewBag.SelectedEventType as string ?? "ALL";
 }
-<div class="admin-panel">
-    <div class="admin-panel-header">
-        <span>📈 Security Reports & Audit Logs</span>
-        <span class="admin-status-pill active">Audit Active</span>
-    </div>
-    <div class="admin-panel-body py-4">
-        <p class="text-muted mb-4">Real-time authentication and security audit stream from <code>AuditLogs_CYH</code>.</p>
-        <div class="alert alert-dark" style="background:#090d1a; border-color:rgba(220,38,38,0.2);">
-            <div class="small text-success">✓ [AUTH_SUCCESS] admin@cyhlocker.com logged in via BCrypt auth</div>
-            <div class="small text-info mt-1">✓ [SESSION_CREATED] Active 30-day session token registered</div>
-            <div class="small text-success mt-1">✓ [USER_SEEDED] user@cyhlocker.com created in database</div>
+
+<div class="admin-panel mb-4">
+    <!-- Header with Live Exports -->
+    <div class="admin-panel-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <span>📈 Security Audit Logs & Telemetry</span>
+            <span class="admin-status-pill active">@Model.Count Events</span>
         </div>
-        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="admin-btn-primary">← Back to Dashboard</a>
+        <div class="d-flex gap-2">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="ExportAuditLogs" asp-route-format="xlsx" asp-route-eventType="@selectedEvent" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" style="border-radius:8px;">
+                📊 Export Excel (.xlsx)
+            </a>
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="ExportAuditLogs" asp-route-format="csv" asp-route-eventType="@selectedEvent" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" style="border-radius:8px;">
+                📄 CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="p-3 border-bottom" style="border-color:rgba(220,38,38,0.2) !important; background:rgba(7,11,22,0.4);">
+        <form method="get" asp-area="Admin" asp-controller="Dashboard" asp-action="Reports" class="row g-2 align-items-center">
+            <div class="col-12 col-md-4">
+                <label class="form-label small text-muted m-0 mb-1">Filter by Event Type</label>
+                <select name="eventType" class="form-select auth-input" onchange="this.form.submit()">
+                    <option value="ALL" selected="@(selectedEvent == "ALL")">All Events</option>
+                    <option value="AUTH_SUCCESS" selected="@(selectedEvent == "AUTH_SUCCESS")">AUTH_SUCCESS (Logins)</option>
+                    <option value="AUTH_FAILURE" selected="@(selectedEvent == "AUTH_FAILURE")">AUTH_FAILURE (Bad Passwords)</option>
+                    <option value="USER_REGISTERED" selected="@(selectedEvent == "USER_REGISTERED")">USER_REGISTERED (Signups)</option>
+                    <option value="ADMIN_TOGGLE_STATUS" selected="@(selectedEvent == "ADMIN_TOGGLE_STATUS")">ADMIN_TOGGLE_STATUS</option>
+                    <option value="ADMIN_TOGGLE_LOCK" selected="@(selectedEvent == "ADMIN_TOGGLE_LOCK")">ADMIN_TOGGLE_LOCK</option>
+                    <option value="ADMIN_ROLE_CHANGE" selected="@(selectedEvent == "ADMIN_ROLE_CHANGE")">ADMIN_ROLE_CHANGE</option>
+                    <option value="ADMIN_USER_DELETED" selected="@(selectedEvent == "ADMIN_USER_DELETED")">ADMIN_USER_DELETED</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-8 text-md-end d-flex align-items-end justify-content-md-end gap-2">
+                @if (selectedEvent != "ALL")
+                {
+                    <a asp-area="Admin" asp-controller="Dashboard" asp-action="Reports" class="btn btn-sm btn-outline-secondary py-2">Clear Filter</a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <!-- Real-time Audit Stream Table -->
+    <div class="admin-panel-body p-0">
+        @if (Model.Count == 0)
+        {
+            <div class="text-center py-5 text-muted">
+                <div style="font-size:3rem;" class="mb-2">🛡️</div>
+                <h6 class="fw-bold text-light">No Audit Events Found</h6>
+                <p class="small text-muted">No security events match the selected criteria.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle" style="background:transparent; font-size:0.88rem;">
+                    <thead>
+                        <tr style="border-bottom:1px solid rgba(220,38,38,0.25); color:#94a3b8; font-size:0.82rem;">
+                            <th>Timestamp (UTC)</th>
+                            <th>Event Category</th>
+                            <th>Account / Email</th>
+                            <th>Client IP</th>
+                            <th>Audit Message & Payload</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td class="text-nowrap text-muted font-monospace" style="font-size:0.8rem;">
+                                    @log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")
+                                </td>
+                                <td>
+                                    @if (log.EventType.Contains("SUCCESS"))
+                                    {
+                                        <span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); font-size:0.75rem;">
+                                            ✓ @log.EventType
+                                        </span>
+                                    }
+                                    else if (log.EventType.Contains("FAIL") || log.EventType.Contains("LOCK") || log.EventType.Contains("DELETED"))
+                                    {
+                                        <span class="badge" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); font-size:0.75rem;">
+                                            ⚠️ @log.EventType
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background:rgba(6,182,212,0.15); color:#67e8f9; border:1px solid rgba(6,182,212,0.3); font-size:0.75rem;">
+                                            ℹ️ @log.EventType
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-light">@log.UserEmail</div>
+                                    <div class="small text-muted">@log.UserFullName</div>
+                                </td>
+                                <td class="font-monospace text-muted" style="font-size:0.8rem;">
+                                    @(log.IpAddress ?? "Local")
+                                </td>
+                                <td class="small text-light">
+                                    @log.Details
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>

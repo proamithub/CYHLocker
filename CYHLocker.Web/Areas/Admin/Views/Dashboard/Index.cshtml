@@ -1,130 +1,192 @@
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Admin Control Center";
+    var stats = ViewBag.Stats as CYHLocker.Data.DTOs.AdminSystemStatsDto ?? new();
+    var recentLogs = ViewBag.RecentLogs as List<CYHLocker.Data.DTOs.AuditLogEntryDto> ?? new();
 }
 
 <!-- ========================================================
-     Admin Dashboard (Areas/Admin)
+     Admin Master Dashboard (Areas/Admin) - LIVE DATABASE
      ======================================================== -->
 
-<!-- Stats Row -->
+<!-- Top Header with Export Buttons -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="user-welcome-title mb-1">👑 Super Admin Control Center</h2>
+        <p class="user-welcome-sub">CYHLockerDB Live Telemetry, User Governance & Threat Monitoring</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-area="Admin" asp-controller="Dashboard" asp-action="ExportUsers" asp-route-format="xlsx" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-2" style="border-radius:10px;">
+            📊 Export Users (.xlsx)
+        </a>
+        <a asp-area="Admin" asp-controller="Dashboard" asp-action="ExportAuditLogs" asp-route-format="xlsx" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-2" style="border-radius:10px;">
+            📥 Export Audit Logs (.xlsx)
+        </a>
+    </div>
+</div>
+
+<!-- Stats Row (Real-time Live DB Counts) -->
 <div class="row g-4 mb-4">
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="admin-stat-card">
-            <div class="admin-stat-icon" style="background:rgba(220,38,38,0.15); color:#f87171;">👥</div>
+            <div class="admin-stat-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;">👥</div>
             <div class="admin-stat-info">
-                <div class="admin-stat-value">2</div>
-                <div class="admin-stat-label">Total Users</div>
+                <div class="admin-stat-value">@stats.TotalUsers</div>
+                <div class="admin-stat-label">Total Accounts</div>
             </div>
-            <div class="admin-stat-trend up">Live</div>
+            <div class="admin-stat-trend up">@stats.ActiveUsers Active</div>
         </div>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="admin-stat-card">
             <div class="admin-stat-icon" style="background:rgba(234,179,8,0.15); color:#fbbf24;">🔐</div>
             <div class="admin-stat-info">
-                <div class="admin-stat-value">Active</div>
-                <div class="admin-stat-label">Sessions</div>
+                <div class="admin-stat-value">@stats.TotalVaultItems</div>
+                <div class="admin-stat-label">Encrypted Items</div>
             </div>
-            <div class="admin-stat-trend up">Live</div>
+            <div class="admin-stat-trend up">AES-256</div>
         </div>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="admin-stat-card">
-            <div class="admin-stat-icon" style="background:rgba(16,185,129,0.15); color:#34d399;">✅</div>
+            <div class="admin-stat-icon" style="background:rgba(16,185,129,0.15); color:#34d399;">🖥️</div>
             <div class="admin-stat-info">
-                <div class="admin-stat-value">TOTP</div>
-                <div class="admin-stat-label">MFA Service</div>
+                <div class="admin-stat-value">@stats.ActiveSessions</div>
+                <div class="admin-stat-label">Active Sessions</div>
             </div>
-            <div class="admin-stat-trend up">Ready</div>
+            <div class="admin-stat-trend up">Online</div>
         </div>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="admin-stat-card">
-            <div class="admin-stat-icon" style="background:rgba(139,92,246,0.15); color:#c4b5fd;">🛡️</div>
+            <div class="admin-stat-icon" style="background:rgba(239,68,68,0.15); color:#f87171;">🛡️</div>
             <div class="admin-stat-info">
-                <div class="admin-stat-value">0</div>
-                <div class="admin-stat-label">Security Alerts</div>
+                <div class="admin-stat-value">@stats.LockedUsers</div>
+                <div class="admin-stat-label">Locked Accounts</div>
             </div>
-            <div class="admin-stat-trend up">Normal</div>
+            <div class="admin-stat-trend @(stats.FailedLogins24h > 0 ? "down" : "up")">@stats.FailedLogins24h Failures 24h</div>
         </div>
     </div>
 </div>
 
-<!-- Quick Actions + System Status -->
+<!-- Quick Actions + Live Audit Feed -->
 <div class="row g-4 mb-4">
-
     <!-- Quick Actions -->
-    <div class="col-12 col-lg-5">
-        <div class="admin-panel">
+    <div class="col-12 col-lg-4">
+        <div class="admin-panel h-100">
             <div class="admin-panel-header">
-                <span>⚡ Quick Actions</span>
+                <span>⚡ System Governance</span>
             </div>
-            <div class="admin-panel-body">
-                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Users" class="admin-action-btn mb-3">
+            <div class="admin-panel-body d-flex flex-column gap-3">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Users" class="admin-action-btn">
                     <span>👥</span>
                     <div>
-                        <div class="fw-semibold">Manage Users</div>
-                        <div class="small opacity-75">View, lock, or delete accounts</div>
+                        <div class="fw-semibold">Manage Users Directory</div>
+                        <div class="small opacity-75">Lock, unlock, delete or promote roles</div>
                     </div>
                     <span class="ms-auto">→</span>
                 </a>
-                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Reports" class="admin-action-btn mb-3">
+
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Reports" class="admin-action-btn">
                     <span>📈</span>
                     <div>
-                        <div class="fw-semibold">View Reports</div>
-                        <div class="small opacity-75">Login activity & security logs</div>
+                        <div class="fw-semibold">Live Audit & Threat Logs</div>
+                        <div class="small opacity-75">Inspect real-time security events</div>
                     </div>
                     <span class="ms-auto">→</span>
                 </a>
+
                 <a asp-area="Admin" asp-controller="Dashboard" asp-action="Settings" class="admin-action-btn">
                     <span>⚙️</span>
                     <div>
-                        <div class="fw-semibold">System Settings</div>
-                        <div class="small opacity-75">Configure app-wide options</div>
+                        <div class="fw-semibold">Security Settings</div>
+                        <div class="small opacity-75">Hardened lockout & session limits</div>
                     </div>
                     <span class="ms-auto">→</span>
                 </a>
+
+                <div class="p-3 rounded mt-auto" style="background:rgba(6,182,212,0.06); border:1px solid rgba(6,182,212,0.2);">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-semibold text-info">Total Security Audits:</span>
+                        <span class="badge bg-dark text-info">@stats.TotalAuditEvents</span>
+                    </div>
+                    <div class="small text-muted" style="font-size:0.75rem;">Every authentication attempt and admin action is permanently logged.</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- System Info -->
-    <div class="col-12 col-lg-7">
-        <div class="admin-panel">
-            <div class="admin-panel-header">
-                <span>🖥️ System Status</span>
-                <span class="admin-status-pill active">All Systems Operational</span>
+    <!-- Live Security Stream -->
+    <div class="col-12 col-lg-8">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header d-flex justify-content-between align-items-center">
+                <span>🛡️ Real-Time Security Audit Stream</span>
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Reports" class="small text-danger text-decoration-none">
+                    View All Logs (@stats.TotalAuditEvents) →
+                </a>
             </div>
-            <div class="admin-panel-body">
-                <div class="admin-status-row">
-                    <span>🗄️ Database</span>
-                    <span class="admin-badge-green">Connected (CYHLockerDB)</span>
-                </div>
-                <div class="admin-status-row">
-                    <span>🔐 Auth Service</span>
-                    <span class="admin-badge-green">Active</span>
-                </div>
-                <div class="admin-status-row">
-                    <span>📱 MFA Service</span>
-                    <span class="admin-badge-green">Active</span>
-                </div>
-                <div class="admin-status-row">
-                    <span>🌐 API & Web Areas</span>
-                    <span class="admin-badge-green">Running</span>
-                </div>
-                <div class="admin-status-row">
-                    <span>📋 Session Store</span>
-                    <span class="admin-badge-green">Active</span>
-                </div>
+            <div class="admin-panel-body p-0">
+                @if (recentLogs.Count == 0)
+                {
+                    <div class="p-4 text-center text-muted small">
+                        No security audit logs recorded yet. Events will stream here automatically.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0 align-middle" style="background:transparent; font-size:0.85rem;">
+                            <thead>
+                                <tr style="border-bottom:1px solid rgba(220,38,38,0.2); color:#94a3b8;">
+                                    <th>Time</th>
+                                    <th>Event</th>
+                                    <th>User</th>
+                                    <th>IP Address</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in recentLogs)
+                                {
+                                    <tr>
+                                        <td class="text-nowrap text-muted" style="font-size:0.78rem;">
+                                            @log.Timestamp.ToString("HH:mm:ss")
+                                        </td>
+                                        <td>
+                                            @if (log.EventType.Contains("SUCCESS"))
+                                            {
+                                                <span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3);">
+                                                    @log.EventType
+                                                </span>
+                                            }
+                                            else if (log.EventType.Contains("FAIL") || log.EventType.Contains("LOCK") || log.EventType.Contains("DELETE"))
+                                            {
+                                                <span class="badge" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3);">
+                                                    @log.EventType
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge" style="background:rgba(6,182,212,0.15); color:#67e8f9; border:1px solid rgba(6,182,212,0.3);">
+                                                    @log.EventType
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="text-truncate text-light" style="max-width:140px;" title="@log.UserEmail">
+                                            @log.UserEmail
+                                        </td>
+                                        <td class="text-muted font-monospace" style="font-size:0.78rem;">
+                                            @(log.IpAddress ?? "Local")
+                                        </td>
+                                        <td class="small text-truncate" style="max-width:200px;" title="@log.Details">
+                                            @log.Details
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
         </div>
     </div>
-</div>
-
-<!-- Phase Info -->
-<div class="admin-info-bar">
-    <span>✅</span>
-    <span>
-        <strong>CYHLocker Admin Area Active</strong> — Configured inside <code>Areas/Admin</code> with dedicated layout and CSS.
-    </span>
 </div>
