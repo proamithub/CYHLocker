@@ -85,9 +85,17 @@ public class VaultController : Controller
             return View(model);
         }
 
-        await _vaultService.CreateVaultItemAsync(CurrentUserId, model);
-        TempData["Success"] = $"{model.ItemType} successfully encrypted and saved in your vault!";
-        return RedirectToAction(nameof(Index), new { type = model.ItemType, categoryId = model.CategoryId });
+        try
+        {
+            await _vaultService.CreateVaultItemAsync(CurrentUserId, model);
+            TempData["Success"] = $"{model.ItemType} successfully encrypted and saved in your vault!";
+            return RedirectToAction(nameof(Index), new { type = model.ItemType, categoryId = model.CategoryId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["QuotaError"] = ex.Message;
+            return RedirectToAction("Index", "Subscription", new { area = "User" });
+        }
     }
 
     // GET: /User/Vault/Details/{id}

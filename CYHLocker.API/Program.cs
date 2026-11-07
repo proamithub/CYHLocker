@@ -29,6 +29,11 @@ builder.Services.AddScoped<IAdminRepository,  AdminRepository>();
 builder.Services.AddScoped<IAdminService,     AdminService>();
 builder.Services.AddScoped<IReportingService, ReportingService>();
 
+// Email & Subscription Services
+builder.Services.AddScoped<IEmailService,           EmailService>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<ISubscriptionService,    SubscriptionService>();
+
 // JWT Auth
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "CYHLocker_SuperSecretKey_2026_AmitLab!";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

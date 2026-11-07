@@ -1,0 +1,328 @@
+@{
+    ViewData["Title"] = "Subscription & Vault Quotas";
+    var userSub = ViewBag.UserSub as CYHLocker.Data.DTOs.UserSubscriptionDto ?? new();
+    var plans = ViewBag.Plans as List<CYHLocker.Data.DTOs.SubscriptionPlanDto> ?? new();
+    var quotaError = TempData["QuotaError"] as string;
+}
+
+<div class="container py-4" style="max-width:1100px;">
+
+    <!-- Top Alert if redirected from quota limit -->
+    @if (!string.IsNullOrEmpty(quotaError))
+    {
+        <div class="alert alert-danger d-flex align-items-center gap-3 p-3 mb-4" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:14px; color:#fca5a5;">
+            <div style="font-size:1.8rem;">⚠️</div>
+            <div>
+                <h6 class="fw-bold text-light mb-1">Vault Storage Limit Reached!</h6>
+                <div class="small">@quotaError</div>
+            </div>
+        </div>
+    }
+
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h2 class="user-welcome-title mb-2">💎 CYHLocker Pro & Vault Quotas</h2>
+        <p class="user-welcome-sub">Choose a plan that fits your security needs. Powered by 256-bit AES Hardware Encryption and Razorpay Payments.</p>
+    </div>
+
+    <!-- Current Active Quota Usage Card -->
+    <div class="glass-card p-4 mb-5" style="border-radius:18px; border-color:rgba(6,182,212,0.3); background:rgba(15,23,42,0.85);">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-3 border-bottom border-secondary">
+            <div>
+                <span class="small text-muted text-uppercase fw-bold" style="letter-spacing:0.05em;">Current Subscription Plan</span>
+                <h4 class="fw-bold text-light mb-0 mt-1 d-flex align-items-center gap-2">
+                    @userSub.PlanName
+                    <span class="badge @(userSub.IsPro ? "bg-success" : "bg-info text-dark")" style="font-size:0.75rem; border-radius:100px; padding:5px 12px;">
+                        @(userSub.IsPro ? "PRO ACTIVE" : "FREE STARTER")
+                    </span>
+                </h4>
+            </div>
+            @if (userSub.ExpirationDate.HasValue)
+            {
+                <div class="text-md-end">
+                    <span class="small text-muted">Expires On:</span>
+                    <div class="text-light fw-bold font-monospace">@userSub.ExpirationDate.Value.ToString("dd MMMM yyyy")</div>
+                </div>
+            }
+        </div>
+
+        <!-- Live Storage Quota Progress Bars -->
+        <div class="row g-4">
+            <!-- Passwords Quota -->
+            <div class="col-12 col-md-4">
+                <div class="p-3 rounded-3" style="background:rgba(7,11,22,0.7); border:1px solid rgba(255,255,255,0.06);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted fw-semibold">🔑 Passwords & Logins</span>
+                        <span class="small fw-bold text-light font-monospace">
+                            @userSub.CurrentPasswords / @(userSub.MaxPasswords > 1000 ? "∞ Unlimited" : userSub.MaxPasswords.ToString())
+                        </span>
+                    </div>
+                    @{
+                        var passPercent = userSub.MaxPasswords > 1000 ? 5 : (int)Math.Min(100, Math.Round((double)userSub.CurrentPasswords / userSub.MaxPasswords * 100));
+                    }
+                    <div class="progress" style="height:6px; background:rgba(255,255,255,0.08);">
+                        <div class="progress-bar @(passPercent >= 90 ? "bg-danger" : "bg-info")" style="width:@passPercent%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cards Quota -->
+            <div class="col-12 col-md-4">
+                <div class="p-3 rounded-3" style="background:rgba(7,11,22,0.7); border:1px solid rgba(255,255,255,0.06);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted fw-semibold">💳 Payment Cards</span>
+                        <span class="small fw-bold text-light font-monospace">
+                            @userSub.CurrentCards / @(userSub.MaxCards > 1000 ? "∞ Unlimited" : userSub.MaxCards.ToString())
+                        </span>
+                    </div>
+                    @{
+                        var cardPercent = userSub.MaxCards > 1000 ? 5 : (int)Math.Min(100, Math.Round((double)userSub.CurrentCards / userSub.MaxCards * 100));
+                    }
+                    <div class="progress" style="height:6px; background:rgba(255,255,255,0.08);">
+                        <div class="progress-bar @(cardPercent >= 90 ? "bg-danger" : "bg-warning")" style="width:@cardPercent%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Quota -->
+            <div class="col-12 col-md-4">
+                <div class="p-3 rounded-3" style="background:rgba(7,11,22,0.7); border:1px solid rgba(255,255,255,0.06);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted fw-semibold">📄 Secure Documents</span>
+                        <span class="small fw-bold text-light font-monospace">
+                            @userSub.CurrentDocuments / @(userSub.MaxDocuments > 1000 ? "∞ Unlimited" : userSub.MaxDocuments.ToString())
+                        </span>
+                    </div>
+                    @{
+                        var docPercent = userSub.MaxDocuments > 1000 ? 5 : (int)Math.Min(100, Math.Round((double)userSub.CurrentDocuments / userSub.MaxDocuments * 100));
+                    }
+                    <div class="progress" style="height:6px; background:rgba(255,255,255,0.08);">
+                        <div class="progress-bar @(docPercent >= 90 ? "bg-danger" : "bg-purple")" style="width:@docPercent%; background:#8b5cf6;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3 Tier Pricing Cards -->
+    <div class="row g-4 justify-content-center">
+
+        <!-- 1. Free Starter Plan -->
+        <div class="col-12 col-lg-4">
+            <div class="glass-card h-100 p-4 d-flex flex-column justify-content-between" style="border-radius:20px; border-color:rgba(255,255,255,0.1); background:rgba(15,23,42,0.65);">
+                <div>
+                    <span class="badge bg-secondary mb-3 py-1 px-3" style="border-radius:100px;">Basic Protection</span>
+                    <h4 class="fw-bold text-light mb-1">Free Starter</h4>
+                    <p class="text-muted small mb-4">Essential personal vault for casual use</p>
+                    
+                    <div class="d-flex align-items-baseline gap-1 mb-4">
+                        <span class="h1 fw-bold text-light mb-0">₹0</span>
+                        <span class="text-muted small">/ forever</span>
+                    </div>
+
+                    <ul class="list-unstyled d-flex flex-column gap-3 small text-muted mb-4">
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✓</span> Up to 15 Encrypted Passwords
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✓</span> Up to 2 Payment Cards
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✓</span> 1 Encrypted Document
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✓</span> AES-256-GCM Encryption
+                        </li>
+                        <li class="d-flex align-items-center gap-2 text-decoration-line-through opacity-50">
+                            <span>✗</span> Multi-Device Timely Cloud Sync
+                        </li>
+                    </ul>
+                </div>
+
+                @if (!userSub.IsPro)
+                {
+                    <button class="btn btn-outline-secondary w-100 py-2 disabled" style="border-radius:12px;">
+                        ✓ Current Plan
+                    </button>
+                }
+                else
+                {
+                    <span class="text-center small text-muted">Active until plan ends</span>
+                }
+            </div>
+        </div>
+
+        <!-- 2. Pro Monthly Plan (Featured) -->
+        <div class="col-12 col-lg-4">
+            <div class="glass-card h-100 p-4 d-flex flex-column justify-content-between position-relative" style="border-radius:20px; border-color:#06b6d4; background:linear-gradient(180deg, rgba(6,182,212,0.12) 0%, rgba(15,23,42,0.85) 100%); box-shadow:0 15px 40px rgba(6,182,212,0.25);">
+                <div class="position-absolute top-0 end-0 m-3">
+                    <span class="badge btn-glow py-1 px-3" style="border-radius:100px;">MOST POPULAR</span>
+                </div>
+                <div>
+                    <span class="badge mb-3 py-1 px-3" style="background:rgba(6,182,212,0.2); color:#67e8f9; border-radius:100px;">Full Security</span>
+                    <h4 class="fw-bold text-light mb-1">CYH Pro (Monthly)</h4>
+                    <p class="text-muted small mb-4">Complete unlimited suite for professionals</p>
+                    
+                    <div class="d-flex align-items-baseline gap-1 mb-4">
+                        <span class="h1 fw-bold text-info mb-0">₹199</span>
+                        <span class="text-muted small">/ month</span>
+                    </div>
+
+                    <ul class="list-unstyled d-flex flex-column gap-3 small text-light mb-4">
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-info fw-bold">✓</span> <strong>Unlimited</strong> Passwords & Logins
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-info fw-bold">✓</span> <strong>Unlimited</strong> Payment Cards
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-info fw-bold">✓</span> <strong>Unlimited</strong> Secure Documents (5GB)
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-info fw-bold">✓</span> <strong>Real-time Cloud Sync</strong> across devices
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-info fw-bold">✓</span> Browser Auto-fill & Emergency Recovery
+                        </li>
+                    </ul>
+                </div>
+
+                <button type="button" class="btn btn-glow w-100 py-2 fw-semibold" style="border-radius:12px;" onclick="initiateRazorpayPayment('PRO_MONTHLY', 199)">
+                    💳 Upgrade via Razorpay (₹199)
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Pro Annual Plan (Best Value) -->
+        <div class="col-12 col-lg-4">
+            <div class="glass-card h-100 p-4 d-flex flex-column justify-content-between" style="border-radius:20px; border-color:rgba(139,92,246,0.4); background:linear-gradient(180deg, rgba(139,92,246,0.12) 0%, rgba(15,23,42,0.85) 100%);">
+                <div>
+                    <span class="badge mb-3 py-1 px-3" style="background:rgba(139,92,246,0.2); color:#c084fc; border-radius:100px;">SAVE 37%</span>
+                    <h4 class="fw-bold text-light mb-1">CYH Pro (Annual)</h4>
+                    <p class="text-muted small mb-4">Best value with full annual priority features</p>
+                    
+                    <div class="d-flex align-items-baseline gap-1 mb-4">
+                        <span class="h1 fw-bold text-light mb-0" style="color:#c084fc !important;">₹1,499</span>
+                        <span class="text-muted small">/ year (₹125/mo)</span>
+                    </div>
+
+                    <ul class="list-unstyled d-flex flex-column gap-3 small text-light mb-4">
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success fw-bold">✓</span> Everything in Pro Monthly
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success fw-bold">✓</span> <strong>20GB+</strong> Encrypted Document Storage
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success fw-bold">✓</span> Emergency PDF Vault Recovery Kit
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success fw-bold">✓</span> Dedicated 24/7 Priority Support
+                        </li>
+                    </ul>
+                </div>
+
+                <button type="button" class="btn btn-outline-glow w-100 py-2 fw-semibold" style="border-radius:12px;" onclick="initiateRazorpayPayment('PRO_ANNUAL', 1499)">
+                    💎 Upgrade Annual (₹1,499)
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Razorpay Standard Checkout Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+@section Scripts {
+<script>
+    function initiateRazorpayPayment(planCode, amountINR) {
+        // 1. Create order on backend
+        fetch('/User/Subscription/CreateOrder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ planCode: planCode })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success || !res.order) {
+                alert(res.message || 'Failed to create payment order.');
+                return;
+            }
+
+            const o = res.order;
+
+            // 2. Configure Razorpay Standard Modal Options
+            const options = {
+                key: o.keyId,
+                amount: o.amountPaise,
+                currency: o.currency,
+                name: 'CYHLocker Vault',
+                description: `${o.planName} Upgrade`,
+                image: 'https://cdn-icons-png.flaticon.com/512/2889/2889676.png',
+                order_id: o.orderId,
+                handler: function (response) {
+                    // 3. Post verification signature back to server
+                    verifyPayment(response.razorpay_order_id || o.orderId, response.razorpay_payment_id, response.razorpay_signature, planCode);
+                },
+                prefill: {
+                    name: o.userFullName,
+                    email: o.userEmail
+                },
+                theme: {
+                    color: '#06b6d4'
+                }
+            };
+
+            // In test environment without active gateway API keys, offer instant test simulation
+            if (options.key.includes('test_CYHLocker')) {
+                simulateTestCheckout(o, planCode);
+                return;
+            }
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                alert('Payment Failed: ' + response.error.description);
+            });
+            rzp.open();
+        })
+        .catch(err => console.error(err));
+    }
+
+    function simulateTestCheckout(order, planCode) {
+        if (confirm(`[Razorpay Test Gateway Simulator]\n\nAuthorize test payment of ₹${order.amountPaise / 100} for ${order.planName}?`)) {
+            const mockPaymentId = 'pay_' + Math.random().toString(36).substring(2, 12);
+            const mockSignature = 'mock_test_sig_' + Math.random().toString(36).substring(2, 12);
+            verifyPayment(order.orderId, mockPaymentId, mockSignature, planCode);
+        }
+    }
+
+    function verifyPayment(orderId, paymentId, signature, planCode) {
+        fetch('/User/Subscription/VerifyPayment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                razorpayOrderId: orderId,
+                razorpayPaymentId: paymentId,
+                razorpaySignature: signature,
+                planCode: planCode
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                alert(res.message);
+                window.location.reload();
+            } else {
+                alert('Verification Error: ' + res.message);
+            }
+        })
+        .catch(err => console.error(err));
+    }
+</script>
+}

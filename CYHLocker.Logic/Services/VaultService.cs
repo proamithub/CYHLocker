@@ -14,6 +14,7 @@ public class VaultService : IVaultService
     private readonly ICryptoEngine _crypto;
     private readonly IPasswordGeneratorService _passGen;
     private readonly IFaviconService _favicon;
+    private readonly ISubscriptionRepository? _subRepo;
     private readonly ILogger<VaultService>? _logger;
 
     public VaultService(
@@ -21,13 +22,15 @@ public class VaultService : IVaultService
         ICryptoEngine crypto, 
         IPasswordGeneratorService passGen,
         IFaviconService favicon,
+        ISubscriptionRepository? subRepo = null,
         ILogger<VaultService>? logger = null)
     {
         _vaultRepo = vaultRepo;
-        _crypto = crypto;
-        _passGen = passGen;
-        _favicon = favicon;
-        _logger = logger;
+        _crypto    = crypto;
+        _passGen   = passGen;
+        _favicon   = favicon;
+        _subRepo   = subRepo;
+        _logger    = logger;
     }
 
     public async Task<List<VaultItemDto>> GetVaultItemsAsync(
@@ -56,6 +59,16 @@ public class VaultService : IVaultService
 
     public async Task<string> CreateVaultItemAsync(string userId, CreateVaultItemRequestDto request)
     {
+        // Check plan quotas if subscription repository is configured
+        if (_subRepo != null)
+        {
+            var quota = await _subRepo.CheckQuotaAsync(userId, request.ItemType ?? "Login");
+            if (!quota.IsAllowed)
+            {
+                throw new InvalidOperationException(quota.Message ?? $"Plan quota exceeded for {request.ItemType}s. Please upgrade to Pro.");
+            }
+        }
+
         var record = PrepareDbRecord(Guid.NewGuid().ToString(), userId, request);
         return await _vaultRepo.InsertItemAsync(record);
     }

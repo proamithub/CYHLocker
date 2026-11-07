@@ -17,18 +17,21 @@ public class AuthService : IAuthService
     private readonly IUserRepository       _repo;
     private readonly IConfiguration        _config;
     private readonly IAdminRepository?     _adminRepo;
+    private readonly IEmailService?        _emailService;
     private readonly ILogger<AuthService>? _logger;
 
     public AuthService(
         IUserRepository repo, 
         IConfiguration config, 
         IAdminRepository? adminRepo = null, 
+        IEmailService? emailService = null,
         ILogger<AuthService>? logger = null)
     {
-        _repo      = repo;
-        _config    = config;
-        _adminRepo = adminRepo;
-        _logger    = logger;
+        _repo         = repo;
+        _config       = config;
+        _adminRepo    = adminRepo;
+        _emailService = emailService;
+        _logger       = logger;
     }
 
     // ── LOGIN ────────────────────────────────────────────────────────────────
@@ -126,9 +129,20 @@ public class AuthService : IAuthService
         var ok    = await _repo.SetResetTokenAsync(email, token);
         if (ok)
         {
-            // In production: send email with token link
-            // For now: log it (token stored in DB, user can query DB for testing)
+            var user = await _repo.GetByEmailAsync(email);
+            var fullName = user?.FullName ?? "User";
+            var baseUrl = _config["App:BaseUrl"] ?? "https://localhost:7124";
+            var resetLink = $"{baseUrl}/Auth/ResetPassword?token={token}";
+
             _logger?.LogInformation("[CYH] Password reset token for {Email}: {Token}", email, token);
+            if (_emailService != null)
+            {
+                _ = _emailService.SendPasswordResetEmailAsync(email, fullName, token, resetLink);
+            }
+            if (_adminRepo != null)
+            {
+                await _adminRepo.LogAuditAsync(user?.UserId, "PASSWORD_RESET_REQUESTED", null, $"Reset link dispatched to {email}");
+            }
         }
         return true; // Always return true to prevent email enumeration
     }

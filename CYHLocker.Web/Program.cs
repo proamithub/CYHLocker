@@ -24,6 +24,11 @@ builder.Services.AddScoped<IAdminRepository,  AdminRepository>();
 builder.Services.AddScoped<IAdminService,     AdminService>();
 builder.Services.AddScoped<IReportingService, ReportingService>();
 
+// Email & Subscription Services
+builder.Services.AddScoped<IEmailService,           EmailService>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<ISubscriptionService,    SubscriptionService>();
+
 // Cookie Auth for web session
 builder.Services.AddAuthentication("CYHCookie")
     .AddCookie("CYHCookie", opt =>

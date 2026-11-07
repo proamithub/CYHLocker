@@ -1,23 +1,87 @@
 @{
-    ViewData["Title"] = "System Settings";
+    ViewData["Title"] = "System & Subscription Settings";
+    var plans = ViewBag.Plans as List<CYHLocker.Data.DTOs.SubscriptionPlanDto> ?? new();
 }
+
+<div class="admin-panel mb-4">
+    <div class="admin-panel-header">
+        <span>⚙️ Subscription Tiers & Quota Governance</span>
+        <span class="admin-status-pill active">Razorpay Gateway Enabled</span>
+    </div>
+    <div class="admin-panel-body py-4">
+        <p class="text-muted small mb-4">
+            Configure how many free items users can store before encountering the upgrade prompt, and set subscription pricing in Indian Rupees (₹).
+        </p>
+
+        <div class="row g-4 mb-4">
+            @foreach (var plan in plans)
+            {
+                <div class="col-12 col-lg-4">
+                    <div class="p-4 rounded-3 h-100 d-flex flex-column justify-content-between" style="background:rgba(255,255,255,0.02); border:1px solid rgba(220,38,38,0.25);">
+                        <form method="post" asp-area="Admin" asp-controller="Dashboard" asp-action="UpdatePlan">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="planId" value="@plan.Id" />
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold text-light m-0">@plan.Name</h5>
+                                <span class="badge @(plan.PlanCode == "FREE" ? "bg-secondary" : "bg-danger")">@plan.PlanCode</span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Price (INR ₹)</label>
+                                <input type="number" step="0.01" name="price" value="@plan.PriceINR" class="form-control auth-input" required @(plan.PlanCode == "FREE" ? "readonly" : "") />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Max Passwords Limit</label>
+                                <input type="number" name="maxPass" value="@plan.MaxPasswords" class="form-control auth-input" required />
+                                <span class="text-muted" style="font-size:0.7rem;">(999999 = Unlimited)</span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Max Payment Cards Limit</label>
+                                <input type="number" name="maxCards" value="@plan.MaxCards" class="form-control auth-input" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Max Documents Limit</label>
+                                <input type="number" name="maxDocs" value="@plan.MaxDocuments" class="form-control auth-input" required />
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="canSync" value="true" @(plan.CanSync ? "checked" : "") id="sync_@plan.Id" />
+                                <label class="form-check-label small text-light" for="sync_@plan.Id">Enable Multi-Device Cloud Sync</label>
+                            </div>
+
+                            <button type="submit" class="admin-btn-primary w-100 py-2">
+                                💾 Save @plan.PlanCode Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- System Hardening Rules -->
 <div class="admin-panel">
     <div class="admin-panel-header">
-        <span>⚙️ System Security Settings</span>
-        <span class="admin-status-pill active">Hardened</span>
+        <span>🛡️ System Security & Hardened Lockout Policies</span>
+        <span class="admin-status-pill active">Enforced</span>
     </div>
     <div class="admin-panel-body py-4">
         <div class="row g-3">
             <div class="col-md-6">
                 <div class="p-3 rounded" style="background:rgba(255,255,255,0.02); border:1px solid rgba(220,38,38,0.2);">
-                    <div class="fw-semibold text-light mb-1">Lockout Threshold</div>
-                    <div class="small text-muted">5 failed attempts → 15 min lock</div>
+                    <div class="fw-semibold text-light mb-1">Failed Attempt Lockout</div>
+                    <div class="small text-muted">5 failed attempts → Automatic 15-minute lock & audit alert</div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="p-3 rounded" style="background:rgba(255,255,255,0.02); border:1px solid rgba(220,38,38,0.2);">
-                    <div class="fw-semibold text-light mb-1">Session Lifetime</div>
-                    <div class="small text-muted">8 hours web cookie / 30 days remember me</div>
+                    <div class="fw-semibold text-light mb-1">Session Lifetime & Token Revocation</div>
+                    <div class="small text-muted">8-hour sliding web cookie / 30-day mobile refresh token</div>
                 </div>
             </div>
         </div>

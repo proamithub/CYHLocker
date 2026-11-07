@@ -12,11 +12,16 @@ public class DashboardController : Controller
 {
     private readonly IAdminService _adminService;
     private readonly IReportingService _reporting;
+    private readonly ISubscriptionService _subService;
 
-    public DashboardController(IAdminService adminService, IReportingService reporting)
+    public DashboardController(
+        IAdminService adminService, 
+        IReportingService reporting,
+        ISubscriptionService subService)
     {
         _adminService = adminService;
         _reporting = reporting;
+        _subService = subService;
     }
 
     private string CurrentAdminId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
@@ -126,10 +131,21 @@ public class DashboardController : Controller
     }
 
     // GET: /Admin/Dashboard/Settings
-    public IActionResult Settings()
+    public async Task<IActionResult> Settings()
     {
         SetCommonViewBag("Settings");
+        var plans = await _subService.GetPlansAsync();
+        ViewBag.Plans = plans;
         return View();
+    }
+
+    // POST: /Admin/Dashboard/UpdatePlan
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdatePlan(string planId, decimal price, int maxPass, int maxCards, int maxDocs, bool canSync)
+    {
+        var ok = await _subService.UpdatePlanConfigAsync(planId, price, maxPass, maxCards, maxDocs, canSync);
+        TempData[ok ? "Success" : "Error"] = ok ? "Subscription tier limits updated successfully." : "Failed to update plan.";
+        return RedirectToAction(nameof(Settings));
     }
 
     private void SetCommonViewBag(string activePage)

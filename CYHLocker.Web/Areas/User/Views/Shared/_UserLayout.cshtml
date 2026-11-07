@@ -47,6 +47,10 @@
                        asp-area="User" asp-controller="Security" asp-action="Index">
                         🛡️ Security
                     </a>
+                    <a class="user-nav-link @(ViewBag.ActivePage == "Subscription" ? "active" : "")"
+                       asp-area="User" asp-controller="Subscription" asp-action="Index">
+                        💎 Subscription
+                    </a>
                     @if (User.IsInRole("Admin"))
                     {
                         <a class="user-nav-link" asp-area="Admin" asp-controller="Dashboard" asp-action="Index" style="color:#f87171;">
