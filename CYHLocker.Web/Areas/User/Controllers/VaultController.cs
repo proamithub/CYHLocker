@@ -274,6 +274,48 @@ public class VaultController : Controller
         return Json(result);
     }
 
+    // ── VAULT BACKUP EXPORT ────────────────────────────────────────────────────
+    [HttpGet]
+    public async Task<IActionResult> ExportBackup(string format = "json")
+    {
+        var items = await _vaultService.GetVaultItemsAsync(CurrentUserId);
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmm");
+
+        if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Title,ItemType,Username,Password,Url,Notes,CreatedAt");
+            foreach (var i in items)
+            {
+                var title = EscapeCsv(i.Title);
+                var type = EscapeCsv(i.ItemType);
+                var user = EscapeCsv(i.Username ?? i.CardholderName ?? i.ApiKey ?? "");
+                var pass = EscapeCsv(i.Password ?? i.CardCvv ?? i.ApiSecret ?? "");
+                var url = EscapeCsv(i.Url ?? "");
+                var notes = EscapeCsv(i.Notes ?? i.DocContent ?? "");
+                var created = i.CreatedAt.ToString("o");
+                sb.AppendLine($"{title},{type},{user},{pass},{url},{notes},{created}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            return File(bytes, "text/csv", $"CYHLocker_Vault_Backup_{timestamp}.csv");
+        }
+
+        var json = System.Text.Json.JsonSerializer.Serialize(items, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        var jsonBytes = System.Text.Encoding.UTF8.GetBytes(json);
+        return File(jsonBytes, "application/json", $"CYHLocker_Vault_Backup_{timestamp}.json");
+    }
+
+    private static string EscapeCsv(string str)
+    {
+        if (string.IsNullOrEmpty(str)) return "";
+        if (str.Contains(',') || str.Contains('"') || str.Contains('\n') || str.Contains('\r'))
+        {
+            return $"\"{str.Replace("\"", "\"\"")}\"";
+        }
+        return str;
+    }
+
     private void SetCommonViewBag(string activePage)
     {
         ViewBag.UserName   = CurrentUserName;

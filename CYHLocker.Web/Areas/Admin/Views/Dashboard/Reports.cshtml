@@ -18,6 +18,12 @@
             <a asp-area="Admin" asp-controller="Dashboard" asp-action="ExportAuditLogs" asp-route-format="csv" asp-route-eventType="@selectedEvent" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" style="border-radius:8px;">
                 📄 CSV
             </a>
+            <form method="post" asp-area="Admin" asp-controller="Dashboard" asp-action="CreateDatabaseBackup" class="d-inline" onsubmit="return confirm('Create a full SQL Server database backup snapshot now?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1" style="border-radius:8px;">
+                    💾 Backup DB (.bak)
+                </button>
+            </form>
         </div>
     </div>
 

@@ -148,6 +148,46 @@ public class DashboardController : Controller
         return RedirectToAction(nameof(Settings));
     }
 
+    // POST: /Admin/Dashboard/CreateDatabaseBackup
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateDatabaseBackup()
+    {
+        try
+        {
+            var config = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var connStr = config.GetConnectionString("DefaultConnection");
+
+            var backupsDir = Path.Combine(Directory.GetCurrentDirectory(), "Backups");
+            if (!Directory.Exists(backupsDir))
+            {
+                Directory.CreateDirectory(backupsDir);
+            }
+
+            var fileName = $"CYHLockerDB_Backup_{DateTime.UtcNow:yyyyMMdd_HHmmss}.bak";
+            var backupPath = Path.Combine(backupsDir, fileName);
+
+            await using (var con = new Microsoft.Data.SqlClient.SqlConnection(connStr))
+            {
+                await con.OpenAsync();
+                var sql = $"BACKUP DATABASE [CYHLockerDB] TO DISK = '{backupPath.Replace("'", "''")}' WITH INIT";
+                await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(sql, con);
+                cmd.CommandTimeout = 120;
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            var fi = new FileInfo(backupPath);
+            var sizeMb = (fi.Length / (1024.0 * 1024.0)).ToString("0.00");
+
+            TempData["Success"] = $"Full database backup created successfully: {fileName} ({sizeMb} MB) in Backups folder.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = "Backup failed: " + ex.Message;
+        }
+
+        return RedirectToAction(nameof(Reports));
+    }
+
     private void SetCommonViewBag(string activePage)
     {
         ViewBag.AdminName  = AdminName;

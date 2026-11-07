@@ -29,8 +29,23 @@
             <a asp-area="" asp-controller="Account" asp-action="ChangePassword" class="user-btn-primary">Change Password →</a>
         </div>
     </div>
-    <div class="col-12">
-        <div class="user-card">
+    <div class="col-12 col-md-6">
+        <div class="user-card h-100">
+            <div class="user-card-icon">📦</div>
+            <h5 class="user-card-title">Encrypted Vault Backup</h5>
+            <p class="user-card-desc">Download an offline backup copy of all your passwords, payment cards, documents, and API keys.</p>
+            <div class="d-flex gap-2 mt-auto pt-2">
+                <a asp-area="User" asp-controller="Vault" asp-action="ExportBackup" asp-route-format="json" class="btn btn-sm btn-glow flex-grow-1">
+                    📥 Download JSON
+                </a>
+                <a asp-area="User" asp-controller="Vault" asp-action="ExportBackup" asp-route-format="csv" class="btn btn-sm btn-outline-secondary flex-grow-1">
+                    📊 Download CSV
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="user-card h-100">
             <div class="user-card-icon">🖥️</div>
             <h5 class="user-card-title">Active Sessions</h5>
             <p class="user-card-desc">View and revoke all sessions from your account.</p>
