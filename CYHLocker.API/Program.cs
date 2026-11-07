@@ -34,6 +34,21 @@ builder.Services.AddScoped<IEmailService,           EmailService>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<ISubscriptionService,    SubscriptionService>();
 
+// Cloud & Offline Sync Services
+builder.Services.AddScoped<ISyncRepository, SyncRepository>();
+builder.Services.AddScoped<ISyncService,    SyncService>();
+
+// CORS for Browser Extension & Web Clients
+builder.Services.AddCors(opt =>
+{
+    opt.AddDefaultPolicy(p =>
+    {
+        p.AllowAnyOrigin()
+         .AllowAnyHeader()
+         .AllowAnyMethod();
+    });
+});
+
 // JWT Auth
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "CYHLocker_SuperSecretKey_2026_AmitLab!";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -59,6 +74,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

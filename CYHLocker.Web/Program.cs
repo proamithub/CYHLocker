@@ -29,6 +29,10 @@ builder.Services.AddScoped<IEmailService,           EmailService>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<ISubscriptionService,    SubscriptionService>();
 
+// Cloud & Offline Sync Services
+builder.Services.AddScoped<ISyncRepository, SyncRepository>();
+builder.Services.AddScoped<ISyncService,    SyncService>();
+
 // Cookie Auth for web session
 builder.Services.AddAuthentication("CYHCookie")
     .AddCookie("CYHCookie", opt =>

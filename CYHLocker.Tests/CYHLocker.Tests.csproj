@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CYHLocker.Logic\CYHLocker.Logic.csproj" />
     <ProjectReference Include="..\CYHLocker.Data\CYHLocker.Data.csproj" />
+    <ProjectReference Include="..\CYHLocker.Mobile\CYHLocker.Mobile.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,268 @@
+/* ============================================================
+   CYHLOCKER AUTO-FILL & IN-FIELD DROPDOWN STYLES
+   ============================================================ */
+
+/* In-field Trigger Badge */
+.cyh-badge-wrapper {
+  position: relative !important;
+  display: inline-block !important;
+}
+
+.cyh-input-badge {
+  position: absolute !important;
+  right: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 6px !important;
+  background: rgba(15, 23, 42, 0.9) !important;
+  border: 1px solid rgba(6, 182, 212, 0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  z-index: 2147483640 !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.cyh-input-badge:hover {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5) !important;
+  transform: translateY(-50%) scale(1.08) !important;
+}
+
+.cyh-input-badge svg {
+  width: 14px !important;
+  height: 14px !important;
+  pointer-events: none !important;
+}
+
+/* Floating Dropdown */
+.cyh-autofill-dropdown {
+  position: absolute !important;
+  z-index: 2147483647 !important;
+  background: #0f172a !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98)) !important;
+  border: 1px solid rgba(6, 182, 212, 0.4) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(6, 182, 212, 0.2) !important;
+  backdrop-filter: blur(12px) !important;
+  width: 320px !important;
+  max-width: 90vw !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  color: #f1f5f9 !important;
+  overflow: hidden !important;
+  animation: cyhSlideDown 0.18s ease-out !important;
+}
+
+@keyframes cyhSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cyh-dropdown-header {
+  padding: 10px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: #67e8f9 !important;
+}
+
+.cyh-dropdown-header-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.cyh-dropdown-close {
+  cursor: pointer !important;
+  color: #94a3b8 !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+}
+
+.cyh-dropdown-close:hover {
+  color: #ef4444 !important;
+}
+
+.cyh-items-list {
+  max-height: 220px !important;
+  overflow-y: auto !important;
+  padding: 4px 0 !important;
+}
+
+.cyh-item-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 14px !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+.cyh-item-row:last-child {
+  border-bottom: none !important;
+}
+
+.cyh-item-row:hover {
+  background: rgba(6, 182, 212, 0.15) !important;
+}
+
+.cyh-item-icon {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+}
+
+.cyh-item-icon img {
+  width: 18px !important;
+  height: 18px !important;
+  object-fit: contain !important;
+}
+
+.cyh-item-info {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.cyh-item-title {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #f8fafc !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.cyh-item-username {
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.cyh-item-action {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  background: rgba(6, 182, 212, 0.2) !important;
+  color: #67e8f9 !important;
+  border: 1px solid rgba(6, 182, 212, 0.4) !important;
+}
+
+.cyh-empty-msg {
+  padding: 16px !important;
+  text-align: center !important;
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+}
+
+.cyh-dropdown-footer {
+  padding: 8px 12px !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 11px !important;
+}
+
+.cyh-gen-btn {
+  background: none !important;
+  border: none !important;
+  color: #38bdf8 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.cyh-gen-btn:hover {
+  text-decoration: underline !important;
+}
+
+/* Save Prompt Banner */
+.cyh-save-banner {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 2147483647 !important;
+  width: 340px !important;
+  background: #0f172a !important;
+  border: 1px solid #06b6d4 !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(6, 182, 212, 0.3) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  color: #f1f5f9 !important;
+  animation: cyhSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes cyhSlideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.cyh-banner-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  color: #67e8f9 !important;
+  margin-bottom: 8px !important;
+}
+
+.cyh-banner-body {
+  font-size: 12px !important;
+  color: #cbd5e1 !important;
+  margin-bottom: 12px !important;
+  line-height: 1.4 !important;
+}
+
+.cyh-banner-actions {
+  display: flex !important;
+  gap: 8px !important;
+  justify-content: flex-end !important;
+}
+
+.cyh-btn-save {
+  background: linear-gradient(135deg, #06b6d4, #2563eb) !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 6px 14px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+}
+
+.cyh-btn-dismiss {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+}

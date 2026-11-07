@@ -61,6 +61,12 @@
 
                 <!-- Right: User Info -->
                 <div class="user-nav-right">
+                    <!-- Live Cloud Sync Indicator -->
+                    <div class="user-sync-pill" id="userSyncStatus" role="button" title="Cloud Vault Sync Status">
+                        <span class="sync-dot sync-synced" id="syncStatusDot"></span>
+                        <span class="sync-text" id="syncStatusText">Synced</span>
+                    </div>
+
                     <!-- MFA Badge -->
                     @if (ViewBag.IsMfa == true)
                     {
@@ -137,6 +143,7 @@
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/vault-sync.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

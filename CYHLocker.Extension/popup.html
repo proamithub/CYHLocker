@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYHLocker Vault</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="cyh-popup-container">
+
+    <!-- Top Header -->
+    <header class="cyh-popup-header">
+      <div class="cyh-header-left">
+        <div class="cyh-logo-icon">
+          <img src="icons/icon48.png" alt="CYHLocker" width="22" height="22">
+        </div>
+        <div class="cyh-header-title">
+          <span>CYH</span><span class="cyh-accent">Locker</span>
+        </div>
+      </div>
+      <div class="cyh-header-right">
+        <span class="cyh-status-badge locked" id="vaultStatusBadge">Locked</span>
+      </div>
+    </header>
+
+    <!-- VIEW 1: AUTHENTICATION / LOGIN -->
+    <section class="cyh-view" id="viewLogin">
+      <div class="cyh-auth-box">
+        <div class="cyh-auth-subtitle">Zero-Knowledge Vault Assistant</div>
+
+        <div class="cyh-form-group">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" placeholder="user@cyhlocker.com" autocomplete="username">
+        </div>
+
+        <div class="cyh-form-group">
+          <label>Master Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••••••" autocomplete="current-password">
+        </div>
+
+        <div class="cyh-api-toggle" id="apiToggleBtn">⚙️ Advanced Server Settings ▼</div>
+        <div class="cyh-api-box hidden" id="apiBox">
+          <label>API Server URL</label>
+          <input type="text" id="apiUrlInput" value="http://localhost:5201/api">
+        </div>
+
+        <div class="cyh-error-msg hidden" id="loginErrorMsg"></div>
+
+        <button class="cyh-btn-primary" id="btnUnlockVault">
+          <span>🔓</span> Unlock My Vault
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW 2: LOGGED IN / VAULT DASHBOARD -->
+    <section class="cyh-view hidden" id="viewVault">
+      <!-- Tabs Nav -->
+      <nav class="cyh-tabs">
+        <button class="cyh-tab-btn active" data-tab="tabCurrent">🌐 Current Tab</button>
+        <button class="cyh-tab-btn" data-tab="tabSearch">🔍 Search</button>
+        <button class="cyh-tab-btn" data-tab="tabGenerate">⚡ Generator</button>
+        <button class="cyh-tab-btn" data-tab="tabAdd">➕ Add</button>
+      </nav>
+
+      <!-- TAB 1: CURRENT SITE MATCHES -->
+      <div class="cyh-tab-pane active" id="tabCurrent">
+        <div class="cyh-site-domain" id="currentSiteDomain">accounts.google.com</div>
+        <div class="cyh-matches-list" id="currentMatchesList">
+          <!-- Populated by popup.js -->
+        </div>
+      </div>
+
+      <!-- TAB 2: SEARCH ALL ITEMS -->
+      <div class="cyh-tab-pane" id="tabSearch">
+        <div class="cyh-search-bar">
+          <input type="text" id="vaultSearchInput" placeholder="Search logins, cards, keys...">
+        </div>
+        <div class="cyh-matches-list" id="allVaultList">
+          <!-- Populated by popup.js -->
+        </div>
+      </div>
+
+      <!-- TAB 3: PASSWORD GENERATOR -->
+      <div class="cyh-tab-pane" id="tabGenerate">
+        <div class="cyh-gen-box">
+          <div class="cyh-gen-preview">
+            <input type="text" id="genPasswordDisplay" readonly>
+            <button class="cyh-copy-btn" id="btnCopyGenPass" title="Copy password">📋</button>
+            <button class="cyh-refresh-btn" id="btnRegenPass" title="Regenerate">🔄</button>
+          </div>
+
+          <div class="cyh-strength-bar">
+            <div class="cyh-strength-fill" id="strengthFill"></div>
+          </div>
+
+          <div class="cyh-slider-row">
+            <label>Length: <span id="lengthVal">18</span></label>
+            <input type="range" id="lengthSlider" min="8" max="64" value="18">
+          </div>
+
+          <div class="cyh-options-grid">
+            <label class="cyh-checkbox"><input type="checkbox" id="chkUpper" checked> A-Z (Uppercase)</label>
+            <label class="cyh-checkbox"><input type="checkbox" id="chkLower" checked> a-z (Lowercase)</label>
+            <label class="cyh-checkbox"><input type="checkbox" id="chkNumbers" checked> 0-9 (Numbers)</label>
+            <label class="cyh-checkbox"><input type="checkbox" id="chkSymbols" checked> !@#$ (Symbols)</label>
+          </div>
+
+          <button class="cyh-btn-secondary" id="btnFillGenPass">
+            ⚡ Fill into Active Form
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 4: QUICK ADD -->
+      <div class="cyh-tab-pane" id="tabAdd">
+        <div class="cyh-add-form">
+          <div class="cyh-form-group">
+            <label>Site Title / Name</label>
+            <input type="text" id="addTitle" placeholder="e.g. GitHub">
+          </div>
+          <div class="cyh-form-group">
+            <label>Username / Email</label>
+            <input type="text" id="addUsername" placeholder="user@work.com">
+          </div>
+          <div class="cyh-form-group">
+            <label>Password</label>
+            <div class="cyh-input-with-action">
+              <input type="password" id="addPassword" placeholder="••••••••••••">
+              <button type="button" id="btnGenForAdd" title="Generate strong password">⚡</button>
+            </div>
+          </div>
+          <div class="cyh-form-group">
+            <label>Website URL</label>
+            <input type="text" id="addUrl" placeholder="https://...">
+          </div>
+          <button class="cyh-btn-primary" id="btnSaveNewItem">💾 Save to Vault</button>
+        </div>
+      </div>
+
+      <!-- Bottom Status Bar -->
+      <footer class="cyh-popup-footer">
+        <a href="http://localhost:5248/User/Vault" target="_blank" class="cyh-web-link" id="linkWebVault">
+          🌐 Open Web Portal
+        </a>
+        <div class="cyh-footer-actions">
+          <button class="cyh-icon-btn" id="btnSyncNow" title="Sync with Cloud">🔄</button>
+          <button class="cyh-icon-btn" id="btnLogout" title="Lock & Logout">🚪</button>
+        </div>
+      </footer>
+    </section>
+
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
