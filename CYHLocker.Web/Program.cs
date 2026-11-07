@@ -15,6 +15,7 @@ builder.Services.AddScoped<IAuthService,    AuthService>();
 // Vault Core Services
 builder.Services.AddSingleton<ICryptoEngine, AesGcmCryptoEngine>();
 builder.Services.AddSingleton<IPasswordGeneratorService, PasswordGeneratorService>();
+builder.Services.AddSingleton<IFaviconService, FaviconService>();
 builder.Services.AddScoped<IVaultRepository, VaultRepository>();
 builder.Services.AddScoped<IVaultService,    VaultService>();
 

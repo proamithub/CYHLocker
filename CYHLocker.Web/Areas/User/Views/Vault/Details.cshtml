@@ -1,9 +1,9 @@
 @model CYHLocker.Data.DTOs.VaultItemDto
 @{
-    ViewData["Title"] = Model.Title + " — Vault Item";
+    ViewData["Title"] = Model.Title + " — Vault Details";
 }
 
-<div class="max-w-3xl mx-auto py-3">
+<div class="container py-4" style="max-width:840px;">
 
     <!-- Back & Action Bar -->
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -12,10 +12,10 @@
                 ← Back to Vault
             </a>
             <h2 class="user-welcome-title mt-1">@Model.Title</h2>
-            <p class="user-welcome-sub">@(Model.UrlDomain ?? Model.ItemType)</p>
+            <p class="user-welcome-sub">@(Model.SecondaryInfo ?? Model.UrlDomain ?? Model.ItemType)</p>
         </div>
         <div class="d-flex gap-2">
-            <a asp-area="User" asp-controller="Vault" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-glow px-3" style="border-radius:10px;">
+            <a asp-area="User" asp-controller="Vault" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-glow px-3" style="border-radius:10px;">
                 ✏️ Edit
             </a>
             <form asp-area="User" asp-controller="Vault" asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Move this item to trash?');">
@@ -28,22 +28,29 @@
     </div>
 
     <!-- Main Credential Card -->
-    <div class="user-card p-4 mb-4">
+    <div class="glass-card p-4 mb-4" style="border-radius:20px; border-color:rgba(6,182,212,0.3); background:rgba(15,23,42,0.85);">
 
         <!-- Top Badges -->
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-4 pb-3 border-bottom" style="border-color:rgba(255,255,255,0.08) !important;">
-            <div class="user-stat-icon teal m-0" style="width:36px; height:36px;">
-                @Model.ItemIcon
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-4 pb-3 border-bottom border-secondary">
+            <div class="vault-brand-avatar" style="width:40px; height:40px;">
+                @if (!string.IsNullOrEmpty(Model.ItemIcon) && Model.ItemIcon.StartsWith("http"))
+                {
+                    <img src="@Model.ItemIcon" alt="@Model.Title" style="width:26px; height:26px; object-fit:contain;" />
+                }
+                else
+                {
+                    <span>@(string.IsNullOrEmpty(Model.ItemIcon) ? "🌐" : Model.ItemIcon)</span>
+                }
             </div>
+            <span class="vault-type-badge @(Model.ItemType.ToLower())">
+                @Model.ItemType
+            </span>
             @if (!string.IsNullOrEmpty(Model.CategoryName))
             {
                 <span class="badge" style="background:rgba(6,182,212,0.15); color:#67e8f9; border:1px solid rgba(6,182,212,0.3); padding:6px 12px; border-radius:10px;">
                     📁 @Model.CategoryName
                 </span>
             }
-            <span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); padding:6px 12px; border-radius:10px;">
-                🛡️ @Model.PasswordStrength
-            </span>
             @if (Model.IsFavorite)
             {
                 <span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); padding:6px 12px; border-radius:10px;">
@@ -52,64 +59,181 @@
             }
         </div>
 
-        <!-- Username / Email -->
-        <div class="mb-4">
-            <label class="text-muted small fw-semibold text-uppercase" style="letter-spacing:0.8px;">Username / Email</label>
-            <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
-                <span class="text-light fw-medium font-monospace" id="usernameText">@(Model.Username ?? "(None)")</span>
-                @if (!string.IsNullOrEmpty(Model.Username))
-                {
-                    <button type="button" class="btn btn-sm btn-outline-glow copy-btn py-1 px-3" data-copy="@Model.Username">
-                        📋 Copy Username
-                    </button>
-                }
-            </div>
-        </div>
-
-        <!-- Encrypted Password -->
-        <div class="mb-4">
-            <label class="text-muted small fw-semibold text-uppercase" style="letter-spacing:0.8px;">Password</label>
-            <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
-                <span class="text-warning font-monospace fw-bold" id="passDisplay">••••••••••••••••</span>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary text-light py-1 px-2" id="toggleRevealBtn">
-                        👁️ Show
-                    </button>
-                    <button type="button" class="btn btn-sm btn-glow copy-btn py-1 px-3" data-copy="@Model.Password">
-                        🔑 Copy Password
-                    </button>
+        <!-- ─────────────────────────────────────────────────────────────
+             CARD TYPE VIEW
+             ───────────────────────────────────────────────────────────── -->
+        @if (Model.ItemType == "Card")
+        {
+            <div class="virtual-credit-card mx-auto mb-4" style="max-width:380px;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="vcard-chip"></div>
+                    <span class="fw-bold" style="font-size:1.1rem; letter-spacing:0.05em;">@(Model.CardBrand ?? "CARD")</span>
+                </div>
+                <div class="vcard-number">
+                    @(string.IsNullOrEmpty(Model.CardNumber) ? "•••• •••• •••• " + Model.CardLast4 : Model.CardNumber)
+                </div>
+                <div class="vcard-footer">
+                    <div>
+                        <div class="small text-muted" style="font-size:0.6rem;">CARDHOLDER</div>
+                        <div class="vcard-holder">@((Model.CardholderName ?? "CARDHOLDER").ToUpper())</div>
+                    </div>
+                    <div>
+                        <div class="small text-muted" style="font-size:0.6rem;">EXPIRES</div>
+                        <div class="vcard-exp">@Model.CardExpiryMonth/@Model.CardExpiryYear</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Website URL -->
-        @if (!string.IsNullOrEmpty(Model.Url))
-        {
-            <div class="mb-4">
-                <label class="text-muted small fw-semibold text-uppercase" style="letter-spacing:0.8px;">Website URL</label>
-                <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
-                    <span class="text-info text-truncate me-2">@Model.Url</span>
-                    <a href="@Model.Url" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-glow py-1 px-3 text-nowrap">
-                        Launch Site ↗
-                    </a>
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <div class="drawer-field-card">
+                        <div class="drawer-field-label">Card Number</div>
+                        <div class="drawer-field-val">
+                            <span>@(Model.CardNumber ?? "•••• •••• •••• " + Model.CardLast4)</span>
+                            @if (!string.IsNullOrEmpty(Model.CardNumber))
+                            {
+                                <button type="button" class="vault-mini-btn copy-btn" data-copy="@Model.CardNumber">📋 Copy</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="drawer-field-card">
+                        <div class="drawer-field-label">CVV</div>
+                        <div class="drawer-field-val">
+                            <span id="cvvMask">•••</span>
+                            <button type="button" class="vault-mini-btn" onclick="toggleSecret('cvvMask', '@Model.CardCvv', this)">👁️</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="drawer-field-card">
+                        <div class="drawer-field-label">Card PIN</div>
+                        <div class="drawer-field-val">
+                            <span id="pinMask">••••</span>
+                            <button type="button" class="vault-mini-btn" onclick="toggleSecret('pinMask', '@Model.CardPin', this)">👁️</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         }
-
-        <!-- Notes -->
-        @if (!string.IsNullOrEmpty(Model.Notes))
+        <!-- ─────────────────────────────────────────────────────────────
+             DOCUMENT TYPE VIEW
+             ───────────────────────────────────────────────────────────── -->
+        else if (Model.ItemType == "Document")
         {
             <div class="mb-4">
-                <label class="text-muted small fw-semibold text-uppercase" style="letter-spacing:0.8px;">Encrypted Notes</label>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="text-muted small fw-semibold text-uppercase">Document Content (Decrypted)</label>
+                    @if (!string.IsNullOrEmpty(Model.DocContent))
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-glow copy-btn" data-copy="@Model.DocContent">
+                            📋 Copy Text
+                        </button>
+                    }
+                </div>
+                <div class="p-3 rounded font-monospace" style="background:rgba(7,11,22,0.85); border:1px solid rgba(6,182,212,0.2); white-space:pre-wrap; color:#f8fafc; font-size:0.92rem; min-height:160px;">
+                    @(Model.DocContent ?? "(Empty Document)")
+                </div>
+            </div>
+        }
+        <!-- ─────────────────────────────────────────────────────────────
+             API KEY TYPE VIEW
+             ───────────────────────────────────────────────────────────── -->
+        else if (Model.ItemType == "ApiKey")
+        {
+            <div class="mb-4">
+                <label class="text-muted small fw-semibold text-uppercase">API Key / Client ID</label>
+                <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                    <span class="text-light font-monospace">@(Model.ApiKey ?? "(None)")</span>
+                    @if (!string.IsNullOrEmpty(Model.ApiKey))
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-glow copy-btn" data-copy="@Model.ApiKey">
+                            📋 Copy Key
+                        </button>
+                    }
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="text-muted small fw-semibold text-uppercase">API Secret Key</label>
+                <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                    <span class="text-warning font-monospace" id="secretKeyMask">••••••••••••••••••••••••</span>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleSecret('secretKeyMask', '@Model.ApiSecret', this)">👁️</button>
+                        @if (!string.IsNullOrEmpty(Model.ApiSecret))
+                        {
+                            <button type="button" class="btn btn-sm btn-glow copy-btn" data-copy="@Model.ApiSecret">
+                                🔑 Copy Secret
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        <!-- ─────────────────────────────────────────────────────────────
+             LOGIN / SOCIAL MEDIA VIEW
+             ───────────────────────────────────────────────────────────── -->
+        else
+        {
+            <!-- Username -->
+            <div class="mb-4">
+                <label class="text-muted small fw-semibold text-uppercase">Username / Email</label>
+                <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                    <span class="text-light fw-medium font-monospace">@(Model.Username ?? "(None)")</span>
+                    @if (!string.IsNullOrEmpty(Model.Username))
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-glow copy-btn py-1 px-3" data-copy="@Model.Username">
+                            📋 Copy Username
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-4">
+                <label class="text-muted small fw-semibold text-uppercase">Password</label>
+                <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                    <span class="text-warning font-monospace fw-bold" id="passDisplay">••••••••••••••••</span>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-light py-1 px-2" id="toggleRevealBtn">
+                            👁️ Show
+                        </button>
+                        <button type="button" class="btn btn-sm btn-glow copy-btn py-1 px-3" data-copy="@Model.Password">
+                            🔑 Copy Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Website URL -->
+            @if (!string.IsNullOrEmpty(Model.Url))
+            {
+                <div class="mb-4">
+                    <label class="text-muted small fw-semibold text-uppercase">Website URL</label>
+                    <div class="p-3 rounded mt-1 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                        <span class="text-info text-truncate me-2">@Model.Url</span>
+                        <a href="@Model.Url" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-glow py-1 px-3 text-nowrap">
+                            Launch Site ↗
+                        </a>
+                    </div>
+                </div>
+            }
+        }
+
+        <!-- Notes (Common) -->
+        @if (!string.IsNullOrEmpty(Model.Notes) && Model.ItemType != "Document")
+        {
+            <div class="mb-4">
+                <label class="text-muted small fw-semibold text-uppercase">Encrypted Notes</label>
                 <div class="p-3 rounded mt-1" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); white-space:pre-wrap; color:#cbd5e1; font-size:0.9rem;">@Model.Notes</div>
             </div>
         }
 
         <!-- Metadata Timestamps -->
-        <div class="pt-3 border-top d-flex flex-wrap justify-content-between text-muted small" style="border-color:rgba(255,255,255,0.06) !important; font-size:0.75rem;">
+        <div class="pt-3 border-top border-secondary d-flex flex-wrap justify-content-between text-muted small" style="font-size:0.75rem;">
             <span>Created: @Model.CreatedAt.ToString("g")</span>
             <span>Last Modified: @Model.UpdatedAt.ToString("g")</span>
-            <span>Encryption: AES-256-GCM (Zero-Knowledge)</span>
+            <span>Encryption: AES-256-GCM (Hardware-Accelerated)</span>
         </div>
 
     </div>
@@ -120,7 +244,7 @@
     <div id="copyToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
             <div class="toast-body">
-                ✓ Copied to clipboard! (Clears in 30s)
+                ✓ Copied to clipboard!
             </div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
@@ -134,16 +258,29 @@
         const revealBtn = document.getElementById('toggleRevealBtn');
         let revealed = false;
 
-        revealBtn.addEventListener('click', () => {
-            revealed = !revealed;
-            if (revealed) {
-                passDisplay.textContent = realPassword;
-                revealBtn.textContent = '🙈 Hide';
+        if (revealBtn) {
+            revealBtn.addEventListener('click', () => {
+                revealed = !revealed;
+                if (revealed) {
+                    passDisplay.textContent = realPassword;
+                    revealBtn.textContent = '🙈 Hide';
+                } else {
+                    passDisplay.textContent = '••••••••••••••••';
+                    revealBtn.textContent = '👁️ Show';
+                }
+            });
+        }
+
+        function toggleSecret(elementId, realValue, btn) {
+            const el = document.getElementById(elementId);
+            if (el.textContent.includes('•')) {
+                el.textContent = realValue;
+                btn.textContent = '🔒';
             } else {
-                passDisplay.textContent = '••••••••••••••••';
-                revealBtn.textContent = '👁️ Show';
+                el.textContent = '••••';
+                btn.textContent = '👁️';
             }
-        });
+        }
 
         document.querySelectorAll('.copy-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {

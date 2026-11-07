@@ -19,7 +19,12 @@ public class VaultRepository : IVaultRepository
         _logger = logger;
     }
 
-    public async Task<List<VaultItemDbRecord>> GetAllItemsAsync(string userId, string? categoryId = null, string? searchQuery = null)
+    public async Task<List<VaultItemDbRecord>> GetAllItemsAsync(
+        string userId, 
+        string? categoryId = null, 
+        string? searchQuery = null, 
+        string? itemType = null, 
+        bool onlyFavorites = false)
     {
         var items = new List<VaultItemDbRecord>();
         try
@@ -31,6 +36,8 @@ public class VaultRepository : IVaultRepository
             cmd.Parameters.AddWithValue("@UserId", userId);
             cmd.Parameters.AddWithValue("@CategoryId", (object?)categoryId ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@SearchQuery", (object?)searchQuery ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@ItemType", (object?)itemType ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@OnlyFavorites", onlyFavorites);
 
             await using var r = await cmd.ExecuteReaderAsync();
             while (await r.ReadAsync())
@@ -91,6 +98,9 @@ public class VaultRepository : IVaultRepository
         cmd.Parameters.AddWithValue("@ItemIcon", (object?)record.ItemIcon ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@IsFavorite", record.IsFavorite);
         cmd.Parameters.AddWithValue("@PasswordStrength", record.PasswordStrength);
+        cmd.Parameters.AddWithValue("@CardBrand", (object?)record.CardBrand ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CardLast4", (object?)record.CardLast4 ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SecondaryInfo", (object?)record.SecondaryInfo ?? DBNull.Value);
 
         var result = await cmd.ExecuteScalarAsync();
         return result?.ToString() ?? id;
@@ -117,6 +127,9 @@ public class VaultRepository : IVaultRepository
         cmd.Parameters.AddWithValue("@ItemIcon", (object?)record.ItemIcon ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@IsFavorite", record.IsFavorite);
         cmd.Parameters.AddWithValue("@PasswordStrength", record.PasswordStrength);
+        cmd.Parameters.AddWithValue("@CardBrand", (object?)record.CardBrand ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CardLast4", (object?)record.CardLast4 ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@SecondaryInfo", (object?)record.SecondaryInfo ?? DBNull.Value);
 
         var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
         return rows > 0;
@@ -145,7 +158,7 @@ public class VaultRepository : IVaultRepository
         cmd.Parameters.AddWithValue("@ItemId", itemId);
 
         var result = await cmd.ExecuteScalarAsync();
-        return result != null && Convert.ToBoolean(result);
+        return Convert.ToBoolean(result);
     }
 
     public async Task<List<VaultItemDbRecord>> GetAutoFillMatchesAsync(string userId, string urlDomain)
@@ -158,7 +171,7 @@ public class VaultRepository : IVaultRepository
             await using var cmd = Sp(con, "ManageVault_CYH");
             cmd.Parameters.AddWithValue("@Flag", "AUTOFILL_MATCH");
             cmd.Parameters.AddWithValue("@UserId", userId);
-            cmd.Parameters.AddWithValue("@UrlDomain", urlDomain.Trim().ToLowerInvariant());
+            cmd.Parameters.AddWithValue("@UrlDomain", urlDomain);
 
             await using var r = await cmd.ExecuteReaderAsync();
             while (await r.ReadAsync())
@@ -173,6 +186,102 @@ public class VaultRepository : IVaultRepository
         return items;
     }
 
+    // ── TRASH MANAGEMENT ───────────────────────────────────────────────────────
+    public async Task<List<VaultItemDbRecord>> GetTrashItemsAsync(string userId)
+    {
+        var items = new List<VaultItemDbRecord>();
+        try
+        {
+            await using var con = new SqlConnection(_conn);
+            await con.OpenAsync();
+            await using var cmd = Sp(con, "ManageVault_CYH");
+            cmd.Parameters.AddWithValue("@Flag", "GET_TRASH");
+            cmd.Parameters.AddWithValue("@UserId", userId);
+
+            await using var r = await cmd.ExecuteReaderAsync();
+            while (await r.ReadAsync())
+            {
+                items.Add(MapRecord(r));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "[CYH] GetTrashItemsAsync failed");
+        }
+        return items;
+    }
+
+    public async Task<bool> RestoreFromTrashAsync(string userId, string itemId)
+    {
+        await using var con = new SqlConnection(_conn);
+        await con.OpenAsync();
+        await using var cmd = Sp(con, "ManageVault_CYH");
+        cmd.Parameters.AddWithValue("@Flag", "RESTORE");
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@ItemId", itemId);
+
+        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+        return rows > 0;
+    }
+
+    public async Task<bool> PermanentlyDeleteItemAsync(string userId, string itemId)
+    {
+        await using var con = new SqlConnection(_conn);
+        await con.OpenAsync();
+        await using var cmd = Sp(con, "ManageVault_CYH");
+        cmd.Parameters.AddWithValue("@Flag", "PERMANENT_DELETE");
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@ItemId", itemId);
+
+        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+        return rows > 0;
+    }
+
+    public async Task<bool> EmptyTrashAsync(string userId)
+    {
+        await using var con = new SqlConnection(_conn);
+        await con.OpenAsync();
+        await using var cmd = Sp(con, "ManageVault_CYH");
+        cmd.Parameters.AddWithValue("@Flag", "EMPTY_TRASH");
+        cmd.Parameters.AddWithValue("@UserId", userId);
+
+        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+        return rows >= 0;
+    }
+
+    // ── SIDEBAR COUNTS ────────────────────────────────────────────────────────
+    public async Task<VaultSidebarCountsDto> GetCountsAsync(string userId)
+    {
+        var counts = new VaultSidebarCountsDto();
+        try
+        {
+            await using var con = new SqlConnection(_conn);
+            await con.OpenAsync();
+            await using var cmd = Sp(con, "ManageVault_CYH");
+            cmd.Parameters.AddWithValue("@Flag", "GET_COUNTS");
+            cmd.Parameters.AddWithValue("@UserId", userId);
+
+            await using var r = await cmd.ExecuteReaderAsync();
+            if (await r.ReadAsync())
+            {
+                counts.TotalAll       = Convert.ToInt32(r["TotalAll"]);
+                counts.TotalLogins    = Convert.ToInt32(r["TotalLogins"]);
+                counts.TotalSocial    = Convert.ToInt32(r["TotalSocial"]);
+                counts.TotalCards     = Convert.ToInt32(r["TotalCards"]);
+                counts.TotalDocuments = Convert.ToInt32(r["TotalDocuments"]);
+                counts.TotalApiKeys   = Convert.ToInt32(r["TotalApiKeys"]);
+                counts.TotalFavorites = Convert.ToInt32(r["TotalFavorites"]);
+                counts.TotalTrash     = Convert.ToInt32(r["TotalTrash"]);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "[CYH] GetCountsAsync failed");
+        }
+        return counts;
+    }
+
+    // ── CATEGORIES ─────────────────────────────────────────────────────────────
     public async Task<List<VaultCategoryDto>> GetCategoriesAsync(string userId)
     {
         var categories = new List<VaultCategoryDto>();
@@ -250,16 +359,19 @@ public class VaultRepository : IVaultRepository
         CategoryColor         = HasColumn(r, "CategoryColor") && r["CategoryColor"] != DBNull.Value ? r["CategoryColor"].ToString() : null,
         ItemType              = HasColumn(r, "ItemType") && r["ItemType"] != DBNull.Value ? r["ItemType"].ToString()! : "Login",
         Title                 = r["Title"].ToString()!,
-        EncryptedUsername     = r["EncryptedUsername"] != DBNull.Value ? r["EncryptedUsername"].ToString() : null,
-        EncryptedPassword     = r["EncryptedPassword"] != DBNull.Value ? r["EncryptedPassword"].ToString() : null,
-        EncryptedUrl          = r["EncryptedUrl"] != DBNull.Value ? r["EncryptedUrl"].ToString() : null,
+        EncryptedUsername     = HasColumn(r, "EncryptedUsername") && r["EncryptedUsername"] != DBNull.Value ? r["EncryptedUsername"].ToString() : null,
+        EncryptedPassword     = HasColumn(r, "EncryptedPassword") && r["EncryptedPassword"] != DBNull.Value ? r["EncryptedPassword"].ToString() : null,
+        EncryptedUrl          = HasColumn(r, "EncryptedUrl") && r["EncryptedUrl"] != DBNull.Value ? r["EncryptedUrl"].ToString() : null,
         EncryptedNotes        = HasColumn(r, "EncryptedNotes") && r["EncryptedNotes"] != DBNull.Value ? r["EncryptedNotes"].ToString() : null,
         EncryptedCustomFields = HasColumn(r, "EncryptedCustomFields") && r["EncryptedCustomFields"] != DBNull.Value ? r["EncryptedCustomFields"].ToString() : null,
-        EncryptionIV          = r["EncryptionIV"].ToString()!,
-        UrlDomain             = r["UrlDomain"] != DBNull.Value ? r["UrlDomain"].ToString() : null,
-        ItemIcon              = r["ItemIcon"] != DBNull.Value ? r["ItemIcon"].ToString() : null,
+        EncryptionIV          = HasColumn(r, "EncryptionIV") ? r["EncryptionIV"].ToString()! : string.Empty,
+        UrlDomain             = HasColumn(r, "UrlDomain") && r["UrlDomain"] != DBNull.Value ? r["UrlDomain"].ToString() : null,
+        ItemIcon              = HasColumn(r, "ItemIcon") && r["ItemIcon"] != DBNull.Value ? r["ItemIcon"].ToString() : null,
         IsFavorite            = HasColumn(r, "IsFavorite") && r["IsFavorite"] != DBNull.Value && Convert.ToBoolean(r["IsFavorite"]),
         PasswordStrength      = HasColumn(r, "PasswordStrength") && r["PasswordStrength"] != DBNull.Value ? r["PasswordStrength"].ToString()! : "Strong",
+        CardBrand             = HasColumn(r, "CardBrand") && r["CardBrand"] != DBNull.Value ? r["CardBrand"].ToString() : null,
+        CardLast4             = HasColumn(r, "CardLast4") && r["CardLast4"] != DBNull.Value ? r["CardLast4"].ToString() : null,
+        SecondaryInfo         = HasColumn(r, "SecondaryInfo") && r["SecondaryInfo"] != DBNull.Value ? r["SecondaryInfo"].ToString() : null,
         CreatedAt             = HasColumn(r, "CreatedAt") && r["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(r["CreatedAt"]) : DateTime.UtcNow,
         UpdatedAt             = HasColumn(r, "UpdatedAt") && r["UpdatedAt"] != DBNull.Value ? Convert.ToDateTime(r["UpdatedAt"]) : DateTime.UtcNow,
         LastUsedAt            = HasColumn(r, "LastUsedAt") && r["LastUsedAt"] != DBNull.Value ? Convert.ToDateTime(r["LastUsedAt"]) : null

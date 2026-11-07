@@ -24,31 +24,46 @@ public class VaultController : Controller
     private string CurrentUserEmail => User.FindFirst(ClaimTypes.Email)?.Value ?? "";
     private bool IsMfa => User.Claims.Any(c => c.Type == "mfa_enabled" && c.Value == "true");
 
-    // GET: /User/Vault?categoryId=...&q=...
-    public async Task<IActionResult> Index(string? categoryId, string? q)
+    // GET: /User/Vault?categoryId=...&q=...&type=...&favoritesOnly=...
+    public async Task<IActionResult> Index(string? categoryId, string? q, string? type, bool favoritesOnly = false)
     {
         SetCommonViewBag("Vault");
         ViewBag.SelectedCategory = categoryId;
         ViewBag.SearchQuery = q;
+        ViewBag.SelectedType = string.IsNullOrEmpty(type) ? "All" : type;
+        ViewBag.FavoritesOnly = favoritesOnly;
 
-        var items = await _vaultService.GetVaultItemsAsync(CurrentUserId, categoryId, q);
+        var items = await _vaultService.GetVaultItemsAsync(CurrentUserId, categoryId, q, type, favoritesOnly);
         var categories = await _vaultService.GetCategoriesAsync(CurrentUserId);
+        var counts = await _vaultService.GetVaultCountsAsync(CurrentUserId);
 
         ViewBag.Categories = categories;
+        ViewBag.Counts = counts;
         return View(items);
     }
 
-    // GET: /User/Vault/Create
+    // AJAX: /User/Vault/GetItemDetailsJson?id=... (for Right Slide-out Drawer)
     [HttpGet]
-    public async Task<IActionResult> Create(string? categoryId)
+    public async Task<IActionResult> GetItemDetailsJson(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return BadRequest();
+        var item = await _vaultService.GetVaultItemByIdAsync(CurrentUserId, id);
+        if (item == null) return NotFound();
+        return Json(new { success = true, data = item });
+    }
+
+    // GET: /User/Vault/Create?type=Login&categoryId=...
+    [HttpGet]
+    public async Task<IActionResult> Create(string? type, string? categoryId)
     {
         SetCommonViewBag("Vault");
         ViewBag.Categories = await _vaultService.GetCategoriesAsync(CurrentUserId);
+        ViewBag.Counts = await _vaultService.GetVaultCountsAsync(CurrentUserId);
         
         var model = new CreateVaultItemRequestDto
         {
             CategoryId = categoryId,
-            ItemType = "Login"
+            ItemType = string.IsNullOrEmpty(type) ? "Login" : type
         };
         return View(model);
     }
@@ -57,16 +72,22 @@ public class VaultController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateVaultItemRequestDto model)
     {
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            ModelState.AddModelError("Title", "Title is required");
+        }
+
         if (!ModelState.IsValid)
         {
             SetCommonViewBag("Vault");
             ViewBag.Categories = await _vaultService.GetCategoriesAsync(CurrentUserId);
+            ViewBag.Counts = await _vaultService.GetVaultCountsAsync(CurrentUserId);
             return View(model);
         }
 
         await _vaultService.CreateVaultItemAsync(CurrentUserId, model);
-        TempData["Success"] = "Item safely encrypted and stored in your vault!";
-        return RedirectToAction(nameof(Index));
+        TempData["Success"] = $"{model.ItemType} successfully encrypted and saved in your vault!";
+        return RedirectToAction(nameof(Index), new { type = model.ItemType, categoryId = model.CategoryId });
     }
 
     // GET: /User/Vault/Details/{id}
@@ -81,6 +102,7 @@ public class VaultController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        ViewBag.Counts = await _vaultService.GetVaultCountsAsync(CurrentUserId);
         return View(item);
     }
 
@@ -97,6 +119,7 @@ public class VaultController : Controller
         }
 
         ViewBag.Categories = await _vaultService.GetCategoriesAsync(CurrentUserId);
+        ViewBag.Counts = await _vaultService.GetVaultCountsAsync(CurrentUserId);
 
         var model = new UpdateVaultItemRequestDto
         {
@@ -109,7 +132,21 @@ public class VaultController : Controller
             Url = item.Url,
             Notes = item.Notes,
             ItemIcon = item.ItemIcon,
-            IsFavorite = item.IsFavorite
+            IsFavorite = item.IsFavorite,
+            CardholderName = item.CardholderName,
+            CardNumber = item.CardNumber,
+            CardBrand = item.CardBrand,
+            CardExpiryMonth = item.CardExpiryMonth,
+            CardExpiryYear = item.CardExpiryYear,
+            CardCvv = item.CardCvv,
+            CardPin = item.CardPin,
+            DocContent = item.DocContent,
+            DocFileName = item.DocFileName,
+            DocFileSize = item.DocFileSize,
+            DocMimeType = item.DocMimeType,
+            ApiKey = item.ApiKey,
+            ApiSecret = item.ApiSecret,
+            ApiEnvironment = item.ApiEnvironment
         };
         return View(model);
     }
@@ -118,10 +155,16 @@ public class VaultController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(UpdateVaultItemRequestDto model)
     {
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            ModelState.AddModelError("Title", "Title is required");
+        }
+
         if (!ModelState.IsValid)
         {
             SetCommonViewBag("Vault");
             ViewBag.Categories = await _vaultService.GetCategoriesAsync(CurrentUserId);
+            ViewBag.Counts = await _vaultService.GetVaultCountsAsync(CurrentUserId);
             return View(model);
         }
 
@@ -141,19 +184,60 @@ public class VaultController : Controller
     public async Task<IActionResult> Delete(string id)
     {
         var ok = await _vaultService.DeleteVaultItemAsync(CurrentUserId, id);
-        TempData[ok ? "Success" : "Error"] = ok ? "Item removed from vault." : "Item not found.";
+        TempData[ok ? "Success" : "Error"] = ok ? "Item moved to Trash." : "Item not found.";
         return RedirectToAction(nameof(Index));
     }
 
     // POST: /User/Vault/ToggleFavorite/{id}
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> ToggleFavorite(string id)
+    public async Task<IActionResult> ToggleFavorite(string id, string? returnUrl = null)
     {
         await _vaultService.ToggleFavoriteAsync(CurrentUserId, id);
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
         return RedirectToAction(nameof(Index));
     }
 
-    // POST: /User/Vault/CreateCategory
+    // ── TRASH MANAGEMENT ───────────────────────────────────────────────────────
+    [HttpGet]
+    public async Task<IActionResult> Trash()
+    {
+        SetCommonViewBag("Vault");
+        ViewBag.Categories = await _vaultService.GetCategoriesAsync(CurrentUserId);
+        ViewBag.Counts = await _vaultService.GetVaultCountsAsync(CurrentUserId);
+        ViewBag.SelectedType = "Trash";
+
+        var trashItems = await _vaultService.GetTrashItemsAsync(CurrentUserId);
+        return View(trashItems);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Restore(string id)
+    {
+        var ok = await _vaultService.RestoreFromTrashAsync(CurrentUserId, id);
+        TempData[ok ? "Success" : "Error"] = ok ? "Item restored back to your vault." : "Failed to restore item.";
+        return RedirectToAction(nameof(Trash));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> PermanentDelete(string id)
+    {
+        var ok = await _vaultService.PermanentlyDeleteItemAsync(CurrentUserId, id);
+        TempData[ok ? "Success" : "Error"] = ok ? "Item permanently erased from vault." : "Failed to delete item.";
+        return RedirectToAction(nameof(Trash));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> EmptyTrash()
+    {
+        var ok = await _vaultService.EmptyTrashAsync(CurrentUserId);
+        TempData[ok ? "Success" : "Error"] = ok ? "Trash emptied successfully." : "Failed to empty trash.";
+        return RedirectToAction(nameof(Trash));
+    }
+
+    // ── CATEGORIES ─────────────────────────────────────────────────────────────
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateCategory(CreateCategoryRequestDto model)
     {
@@ -165,7 +249,7 @@ public class VaultController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // AJAX: /User/Vault/GeneratePassword
+    // ── PASSWORD GENERATOR ─────────────────────────────────────────────────────
     [HttpGet]
     public IActionResult GeneratePassword(int length = 16, bool uppercase = true, bool lowercase = true, bool numbers = true, bool symbols = true)
     {

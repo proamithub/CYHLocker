@@ -7,7 +7,7 @@ public class VaultItemDto
     public string? CategoryId { get; set; }
     public string? CategoryName { get; set; }
     public string? CategoryColor { get; set; }
-    public string ItemType { get; set; } = "Login"; // Login, Card, Identity, ApiKey
+    public string ItemType { get; set; } = "Login"; // Login, Social, Card, Document, ApiKey
     public string Title { get; set; } = string.Empty;
 
     // Decrypted fields for client display
@@ -16,6 +16,30 @@ public class VaultItemDto
     public string? Url { get; set; }
     public string? Notes { get; set; }
     public string? CustomFieldsJson { get; set; }
+
+    // Card Specific Decrypted Fields
+    public string? CardholderName { get; set; }
+    public string? CardNumber { get; set; }
+    public string? CardBrand { get; set; }      // Visa, MasterCard, RuPay, Amex
+    public string? CardLast4 { get; set; }      // Plain text for quick UI display
+    public string? CardExpiryMonth { get; set; }
+    public string? CardExpiryYear { get; set; }
+    public string? CardCvv { get; set; }
+    public string? CardPin { get; set; }
+
+    // Document Specific Decrypted Fields
+    public string? DocContent { get; set; }
+    public string? DocFileName { get; set; }
+    public string? DocFileSize { get; set; }
+    public string? DocMimeType { get; set; }
+
+    // ApiKey Specific Decrypted Fields
+    public string? ApiKey { get; set; }
+    public string? ApiSecret { get; set; }
+    public string? ApiEnvironment { get; set; }
+
+    // General Display Subtitle (e.g. username, •••• 4021, 1.8 MB, sk_live_...)
+    public string? SecondaryInfo { get; set; }
 
     // Plain metadata
     public string? UrlDomain { get; set; }

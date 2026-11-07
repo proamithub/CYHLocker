@@ -23,12 +23,24 @@ public class VaultController : ControllerBase
     private string CurrentUserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
         ?? throw new UnauthorizedAccessException("User ID claim not found.");
 
-    // GET: api/vault/items?categoryId=...&q=...
+    // GET: api/vault/items?categoryId=...&q=...&type=...&favoritesOnly=true
     [HttpGet("items")]
-    public async Task<IActionResult> GetItems([FromQuery] string? categoryId, [FromQuery] string? q)
+    public async Task<IActionResult> GetItems(
+        [FromQuery] string? categoryId, 
+        [FromQuery] string? q, 
+        [FromQuery] string? type, 
+        [FromQuery] bool favoritesOnly = false)
     {
-        var items = await _vaultService.GetVaultItemsAsync(CurrentUserId, categoryId, q);
+        var items = await _vaultService.GetVaultItemsAsync(CurrentUserId, categoryId, q, type, favoritesOnly);
         return Ok(new ApiResponse<List<VaultItemDto>> { Success = true, Data = items });
+    }
+
+    // GET: api/vault/counts
+    [HttpGet("counts")]
+    public async Task<IActionResult> GetCounts()
+    {
+        var counts = await _vaultService.GetVaultCountsAsync(CurrentUserId);
+        return Ok(new ApiResponse<VaultSidebarCountsDto> { Success = true, Data = counts });
     }
 
     // GET: api/vault/items/{id}
@@ -86,6 +98,36 @@ public class VaultController : ControllerBase
         return Ok(new ApiResponse<bool> { Success = true, Data = isFav });
     }
 
+    // ── TRASH MANAGEMENT ───────────────────────────────────────────────────────
+    [HttpGet("trash")]
+    public async Task<IActionResult> GetTrash()
+    {
+        var items = await _vaultService.GetTrashItemsAsync(CurrentUserId);
+        return Ok(new ApiResponse<List<VaultItemDto>> { Success = true, Data = items });
+    }
+
+    [HttpPost("trash/{id}/restore")]
+    public async Task<IActionResult> RestoreFromTrash(string id)
+    {
+        var ok = await _vaultService.RestoreFromTrashAsync(CurrentUserId, id);
+        return Ok(new ApiResponse<bool> { Success = ok, Data = ok });
+    }
+
+    [HttpDelete("trash/{id}/permanent")]
+    public async Task<IActionResult> PermanentDelete(string id)
+    {
+        var ok = await _vaultService.PermanentlyDeleteItemAsync(CurrentUserId, id);
+        return Ok(new ApiResponse<bool> { Success = ok, Data = ok });
+    }
+
+    [HttpDelete("trash/empty")]
+    public async Task<IActionResult> EmptyTrash()
+    {
+        var ok = await _vaultService.EmptyTrashAsync(CurrentUserId);
+        return Ok(new ApiResponse<bool> { Success = ok, Data = ok });
+    }
+
+    // ── AUTOFILL ───────────────────────────────────────────────────────────────
     // GET: api/vault/autofill?domain=github.com
     [HttpGet("autofill")]
     public async Task<IActionResult> AutoFill([FromQuery] string domain)
@@ -97,6 +139,7 @@ public class VaultController : ControllerBase
         return Ok(new ApiResponse<List<AutoFillMatchDto>> { Success = true, Data = matches });
     }
 
+    // ── CATEGORIES ─────────────────────────────────────────────────────────────
     // GET: api/vault/categories
     [HttpGet("categories")]
     public async Task<IActionResult> GetCategories()
@@ -124,6 +167,7 @@ public class VaultController : ControllerBase
         return Ok(new ApiResponse<bool> { Success = ok, Data = ok });
     }
 
+    // ── PASSWORD GENERATOR UTILITY ─────────────────────────────────────────────
     // POST: api/vault/generate-password
     [HttpPost("generate-password")]
     [AllowAnonymous] // Anyone can use the generator utility

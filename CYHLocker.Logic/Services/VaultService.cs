@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using CYHLocker.Data.DTOs;
 using CYHLocker.Logic.Encryption;
 using CYHLocker.Logic.Interfaces;
@@ -11,23 +13,31 @@ public class VaultService : IVaultService
     private readonly IVaultRepository _vaultRepo;
     private readonly ICryptoEngine _crypto;
     private readonly IPasswordGeneratorService _passGen;
+    private readonly IFaviconService _favicon;
     private readonly ILogger<VaultService>? _logger;
 
     public VaultService(
         IVaultRepository vaultRepo, 
         ICryptoEngine crypto, 
         IPasswordGeneratorService passGen,
+        IFaviconService favicon,
         ILogger<VaultService>? logger = null)
     {
         _vaultRepo = vaultRepo;
         _crypto = crypto;
         _passGen = passGen;
+        _favicon = favicon;
         _logger = logger;
     }
 
-    public async Task<List<VaultItemDto>> GetVaultItemsAsync(string userId, string? categoryId = null, string? searchQuery = null)
+    public async Task<List<VaultItemDto>> GetVaultItemsAsync(
+        string userId, 
+        string? categoryId = null, 
+        string? searchQuery = null, 
+        string? itemType = null, 
+        bool onlyFavorites = false)
     {
-        var records = await _vaultRepo.GetAllItemsAsync(userId, categoryId, searchQuery);
+        var records = await _vaultRepo.GetAllItemsAsync(userId, categoryId, searchQuery, itemType, onlyFavorites);
         var result = new List<VaultItemDto>(records.Count);
 
         foreach (var r in records)
@@ -46,68 +56,13 @@ public class VaultService : IVaultService
 
     public async Task<string> CreateVaultItemAsync(string userId, CreateVaultItemRequestDto request)
     {
-        var domain = ExtractDomain(request.Url);
-        var strength = _passGen.EvaluateStrength(request.Password);
-
-        // Encrypt sensitive fields with AES-256-GCM
-        var encryptedUser   = string.IsNullOrEmpty(request.Username) ? null : _crypto.Encrypt(request.Username);
-        var encryptedPass   = string.IsNullOrEmpty(request.Password) ? null : _crypto.Encrypt(request.Password);
-        var encryptedUrl    = string.IsNullOrEmpty(request.Url)      ? null : _crypto.Encrypt(request.Url);
-        var encryptedNotes  = string.IsNullOrEmpty(request.Notes)    ? null : _crypto.Encrypt(request.Notes);
-        var encryptedCustom = string.IsNullOrEmpty(request.CustomFieldsJson) ? null : _crypto.Encrypt(request.CustomFieldsJson);
-
-        var record = new VaultItemDbRecord
-        {
-            Id                    = Guid.NewGuid().ToString(),
-            UserId                = userId,
-            CategoryId            = request.CategoryId,
-            ItemType              = request.ItemType ?? "Login",
-            Title                 = request.Title.Trim(),
-            EncryptedUsername     = encryptedUser,
-            EncryptedPassword     = encryptedPass,
-            EncryptedUrl          = encryptedUrl,
-            EncryptedNotes        = encryptedNotes,
-            EncryptedCustomFields = encryptedCustom,
-            EncryptionIV          = "AES-256-GCM",
-            UrlDomain             = domain,
-            ItemIcon              = string.IsNullOrEmpty(request.ItemIcon) ? GetDefaultIcon(request.ItemType) : request.ItemIcon,
-            IsFavorite            = request.IsFavorite,
-            PasswordStrength      = strength
-        };
-
+        var record = PrepareDbRecord(Guid.NewGuid().ToString(), userId, request);
         return await _vaultRepo.InsertItemAsync(record);
     }
 
     public async Task<bool> UpdateVaultItemAsync(string userId, UpdateVaultItemRequestDto request)
     {
-        var domain = ExtractDomain(request.Url);
-        var strength = _passGen.EvaluateStrength(request.Password);
-
-        var encryptedUser   = string.IsNullOrEmpty(request.Username) ? null : _crypto.Encrypt(request.Username);
-        var encryptedPass   = string.IsNullOrEmpty(request.Password) ? null : _crypto.Encrypt(request.Password);
-        var encryptedUrl    = string.IsNullOrEmpty(request.Url)      ? null : _crypto.Encrypt(request.Url);
-        var encryptedNotes  = string.IsNullOrEmpty(request.Notes)    ? null : _crypto.Encrypt(request.Notes);
-        var encryptedCustom = string.IsNullOrEmpty(request.CustomFieldsJson) ? null : _crypto.Encrypt(request.CustomFieldsJson);
-
-        var record = new VaultItemDbRecord
-        {
-            Id                    = request.Id,
-            UserId                = userId,
-            CategoryId            = request.CategoryId,
-            ItemType              = request.ItemType ?? "Login",
-            Title                 = request.Title.Trim(),
-            EncryptedUsername     = encryptedUser,
-            EncryptedPassword     = encryptedPass,
-            EncryptedUrl          = encryptedUrl,
-            EncryptedNotes        = encryptedNotes,
-            EncryptedCustomFields = encryptedCustom,
-            EncryptionIV          = "AES-256-GCM",
-            UrlDomain             = domain,
-            ItemIcon              = string.IsNullOrEmpty(request.ItemIcon) ? GetDefaultIcon(request.ItemType) : request.ItemIcon,
-            IsFavorite            = request.IsFavorite,
-            PasswordStrength      = strength
-        };
-
+        var record = PrepareDbRecord(request.Id, userId, request);
         return await _vaultRepo.UpdateItemAsync(record);
     }
 
@@ -119,7 +74,7 @@ public class VaultService : IVaultService
 
     public async Task<List<AutoFillMatchDto>> GetAutoFillMatchesAsync(string userId, string urlOrDomain)
     {
-        var domain = ExtractDomain(urlOrDomain) ?? urlOrDomain.Trim().ToLowerInvariant();
+        var domain = _favicon.ExtractDomain(urlOrDomain) ?? urlOrDomain.Trim().ToLowerInvariant();
         var records = await _vaultRepo.GetAutoFillMatchesAsync(userId, domain);
         var result = new List<AutoFillMatchDto>(records.Count);
 
@@ -140,6 +95,32 @@ public class VaultService : IVaultService
         return result;
     }
 
+    // ── TRASH MANAGEMENT ───────────────────────────────────────────────────────
+    public async Task<List<VaultItemDto>> GetTrashItemsAsync(string userId)
+    {
+        var records = await _vaultRepo.GetTrashItemsAsync(userId);
+        var result = new List<VaultItemDto>(records.Count);
+        foreach (var r in records)
+        {
+            result.Add(DecryptItem(r));
+        }
+        return result;
+    }
+
+    public Task<bool> RestoreFromTrashAsync(string userId, string itemId) =>
+        _vaultRepo.RestoreFromTrashAsync(userId, itemId);
+
+    public Task<bool> PermanentlyDeleteItemAsync(string userId, string itemId) =>
+        _vaultRepo.PermanentlyDeleteItemAsync(userId, itemId);
+
+    public Task<bool> EmptyTrashAsync(string userId) =>
+        _vaultRepo.EmptyTrashAsync(userId);
+
+    // ── SIDEBAR COUNTS ────────────────────────────────────────────────────────
+    public Task<VaultSidebarCountsDto> GetVaultCountsAsync(string userId) =>
+        _vaultRepo.GetCountsAsync(userId);
+
+    // ── CATEGORIES ─────────────────────────────────────────────────────────────
     public Task<List<VaultCategoryDto>> GetCategoriesAsync(string userId) =>
         _vaultRepo.GetCategoriesAsync(userId);
 
@@ -149,22 +130,151 @@ public class VaultService : IVaultService
     public Task<bool> DeleteCategoryAsync(string userId, string categoryId) =>
         _vaultRepo.DeleteCategoryAsync(userId, categoryId);
 
-    // ── HELPERS ───────────────────────────────────────────────────────────────
+    // ── PRIVATE HELPERS ────────────────────────────────────────────────────────
+    private VaultItemDbRecord PrepareDbRecord(string id, string userId, CreateVaultItemRequestDto request)
+    {
+        var type = string.IsNullOrWhiteSpace(request.ItemType) ? "Login" : request.ItemType.Trim();
+        var domain = _favicon.ExtractDomain(request.Url);
+        var strength = string.IsNullOrEmpty(request.Password) ? "Strong" : _passGen.EvaluateStrength(request.Password);
+
+        string? encryptedUser = null;
+        string? encryptedPass = null;
+        string? encryptedUrl = null;
+        string? encryptedNotes = null;
+        string? encryptedCustom = null;
+        string? cardBrand = null;
+        string? cardLast4 = null;
+        string? secondary = null;
+        string? icon = request.ItemIcon;
+
+        if (string.Equals(type, "Card", StringComparison.OrdinalIgnoreCase))
+        {
+            // Payment Card Handling
+            var cleanNumber = Regex.Replace(request.CardNumber ?? "", @"\D", "");
+            cardLast4 = cleanNumber.Length >= 4 ? cleanNumber[^4..] : cleanNumber;
+            cardBrand = string.IsNullOrEmpty(request.CardBrand) 
+                ? _favicon.DetectCardBrand(cleanNumber) 
+                : request.CardBrand.Trim();
+
+            secondary = $"{cardBrand} •••• {cardLast4}".Trim();
+
+            // Encrypt card sensitive payload
+            encryptedUser  = string.IsNullOrEmpty(request.CardholderName) ? null : _crypto.Encrypt(request.CardholderName);
+            encryptedPass  = string.IsNullOrEmpty(request.CardCvv) ? null : _crypto.Encrypt(request.CardCvv);
+            encryptedNotes = string.IsNullOrEmpty(request.Notes) ? null : _crypto.Encrypt(request.Notes);
+
+            var cardMeta = new Dictionary<string, string?>
+            {
+                { "CardNumber", request.CardNumber },
+                { "ExpiryMonth", request.CardExpiryMonth },
+                { "ExpiryYear", request.CardExpiryYear },
+                { "CardPin", request.CardPin },
+                { "CardBrand", cardBrand },
+                { "CardLast4", cardLast4 }
+            };
+            encryptedCustom = _crypto.Encrypt(JsonSerializer.Serialize(cardMeta));
+
+            if (string.IsNullOrEmpty(icon))
+            {
+                icon = _favicon.ResolveIcon(null, request.Title, "Card", cardBrand);
+            }
+        }
+        else if (string.Equals(type, "Document", StringComparison.OrdinalIgnoreCase))
+        {
+            // Encrypted Document Handling
+            secondary = string.IsNullOrEmpty(request.DocFileSize) ? "Encrypted Doc" : request.DocFileSize;
+
+            encryptedNotes = string.IsNullOrEmpty(request.DocContent) ? null : _crypto.Encrypt(request.DocContent);
+
+            var docMeta = new Dictionary<string, string?>
+            {
+                { "DocFileName", request.DocFileName },
+                { "DocFileSize", request.DocFileSize },
+                { "DocMimeType", request.DocMimeType }
+            };
+            encryptedCustom = _crypto.Encrypt(JsonSerializer.Serialize(docMeta));
+
+            if (string.IsNullOrEmpty(icon))
+            {
+                icon = _favicon.ResolveIcon(null, request.Title, "Document");
+            }
+        }
+        else if (string.Equals(type, "ApiKey", StringComparison.OrdinalIgnoreCase))
+        {
+            // Developer API Key Handling
+            secondary = string.IsNullOrEmpty(request.ApiEnvironment) ? "API Key" : request.ApiEnvironment;
+
+            encryptedUser  = string.IsNullOrEmpty(request.ApiKey) ? null : _crypto.Encrypt(request.ApiKey);
+            encryptedPass  = string.IsNullOrEmpty(request.ApiSecret) ? null : _crypto.Encrypt(request.ApiSecret);
+            encryptedUrl   = string.IsNullOrEmpty(request.Url) ? null : _crypto.Encrypt(request.Url);
+            encryptedNotes = string.IsNullOrEmpty(request.Notes) ? null : _crypto.Encrypt(request.Notes);
+
+            var apiMeta = new Dictionary<string, string?>
+            {
+                { "ApiEnvironment", request.ApiEnvironment }
+            };
+            encryptedCustom = _crypto.Encrypt(JsonSerializer.Serialize(apiMeta));
+
+            if (string.IsNullOrEmpty(icon))
+            {
+                icon = _favicon.ResolveIcon(null, request.Title, "ApiKey");
+            }
+        }
+        else
+        {
+            // Login / Social Media Handling
+            secondary = request.Username;
+
+            encryptedUser   = string.IsNullOrEmpty(request.Username) ? null : _crypto.Encrypt(request.Username);
+            encryptedPass   = string.IsNullOrEmpty(request.Password) ? null : _crypto.Encrypt(request.Password);
+            encryptedUrl    = string.IsNullOrEmpty(request.Url)      ? null : _crypto.Encrypt(request.Url);
+            encryptedNotes  = string.IsNullOrEmpty(request.Notes)    ? null : _crypto.Encrypt(request.Notes);
+            encryptedCustom = string.IsNullOrEmpty(request.CustomFieldsJson) ? null : _crypto.Encrypt(request.CustomFieldsJson);
+
+            if (string.IsNullOrEmpty(icon))
+            {
+                icon = _favicon.ResolveIcon(request.Url, request.Title, type);
+            }
+        }
+
+        return new VaultItemDbRecord
+        {
+            Id                    = id,
+            UserId                = userId,
+            CategoryId            = request.CategoryId,
+            ItemType              = type,
+            Title                 = request.Title.Trim(),
+            EncryptedUsername     = encryptedUser,
+            EncryptedPassword     = encryptedPass,
+            EncryptedUrl          = encryptedUrl,
+            EncryptedNotes        = encryptedNotes,
+            EncryptedCustomFields = encryptedCustom,
+            EncryptionIV          = "AES-256-GCM",
+            UrlDomain             = domain,
+            ItemIcon              = icon,
+            IsFavorite            = request.IsFavorite,
+            PasswordStrength      = strength,
+            CardBrand             = cardBrand,
+            CardLast4             = cardLast4,
+            SecondaryInfo         = secondary
+        };
+    }
+
     private VaultItemDto DecryptItem(VaultItemDbRecord r)
     {
         string? username = null;
         string? password = null;
         string? url = null;
         string? notes = null;
-        string? custom = null;
+        string? customJson = null;
 
         try { if (!string.IsNullOrEmpty(r.EncryptedUsername)) username = _crypto.Decrypt(r.EncryptedUsername); } catch { username = "[Decryption Failed]"; }
         try { if (!string.IsNullOrEmpty(r.EncryptedPassword)) password = _crypto.Decrypt(r.EncryptedPassword); } catch { password = "[Decryption Failed]"; }
         try { if (!string.IsNullOrEmpty(r.EncryptedUrl))      url      = _crypto.Decrypt(r.EncryptedUrl); } catch { url = "[Decryption Failed]"; }
         try { if (!string.IsNullOrEmpty(r.EncryptedNotes))    notes    = _crypto.Decrypt(r.EncryptedNotes); } catch { notes = null; }
-        try { if (!string.IsNullOrEmpty(r.EncryptedCustomFields)) custom = _crypto.Decrypt(r.EncryptedCustomFields); } catch { custom = null; }
+        try { if (!string.IsNullOrEmpty(r.EncryptedCustomFields)) customJson = _crypto.Decrypt(r.EncryptedCustomFields); } catch { customJson = null; }
 
-        return new VaultItemDto
+        var item = new VaultItemDto
         {
             Id               = r.Id,
             UserId           = r.UserId,
@@ -177,45 +287,73 @@ public class VaultService : IVaultService
             Password         = password,
             Url              = url,
             Notes            = notes,
-            CustomFieldsJson = custom,
+            CustomFieldsJson = customJson,
             UrlDomain        = r.UrlDomain,
             ItemIcon         = r.ItemIcon,
             IsFavorite       = r.IsFavorite,
             PasswordStrength = r.PasswordStrength,
+            CardBrand        = r.CardBrand,
+            CardLast4        = r.CardLast4,
+            SecondaryInfo    = r.SecondaryInfo,
             CreatedAt        = r.CreatedAt,
             UpdatedAt        = r.UpdatedAt,
             LastUsedAt       = r.LastUsedAt
         };
-    }
 
-    private static string? ExtractDomain(string? rawUrl)
-    {
-        if (string.IsNullOrWhiteSpace(rawUrl)) return null;
-        try
+        // Unpack Card metadata
+        if (string.Equals(r.ItemType, "Card", StringComparison.OrdinalIgnoreCase))
         {
-            var url = rawUrl.Trim();
-            if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && 
-                !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            item.CardholderName = username;
+            item.CardCvv = password;
+            if (!string.IsNullOrEmpty(customJson))
             {
-                url = "https://" + url;
+                try
+                {
+                    using var doc = JsonDocument.Parse(customJson);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("CardNumber", out var cn)) item.CardNumber = cn.GetString();
+                    if (root.TryGetProperty("ExpiryMonth", out var em)) item.CardExpiryMonth = em.GetString();
+                    if (root.TryGetProperty("ExpiryYear", out var ey)) item.CardExpiryYear = ey.GetString();
+                    if (root.TryGetProperty("CardPin", out var cp)) item.CardPin = cp.GetString();
+                    if (root.TryGetProperty("CardBrand", out var cb) && string.IsNullOrEmpty(item.CardBrand)) item.CardBrand = cb.GetString();
+                }
+                catch { /* Ignore corrupt meta */ }
             }
-            var uri = new Uri(url);
-            var host = uri.Host.ToLowerInvariant();
-            if (host.StartsWith("www.")) host = host[4..];
-            return host;
         }
-        catch
+        // Unpack Document metadata
+        else if (string.Equals(r.ItemType, "Document", StringComparison.OrdinalIgnoreCase))
         {
-            return rawUrl.Trim().ToLowerInvariant();
+            item.DocContent = notes;
+            if (!string.IsNullOrEmpty(customJson))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(customJson);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("DocFileName", out var fn)) item.DocFileName = fn.GetString();
+                    if (root.TryGetProperty("DocFileSize", out var fs)) item.DocFileSize = fs.GetString();
+                    if (root.TryGetProperty("DocMimeType", out var mt)) item.DocMimeType = mt.GetString();
+                }
+                catch { /* Ignore corrupt meta */ }
+            }
         }
-    }
+        // Unpack ApiKey metadata
+        else if (string.Equals(r.ItemType, "ApiKey", StringComparison.OrdinalIgnoreCase))
+        {
+            item.ApiKey = username;
+            item.ApiSecret = password;
+            if (!string.IsNullOrEmpty(customJson))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(customJson);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("ApiEnvironment", out var env)) item.ApiEnvironment = env.GetString();
+                }
+                catch { /* Ignore corrupt meta */ }
+            }
+        }
 
-    private static string GetDefaultIcon(string? itemType) => itemType switch
-    {
-        "Card"     => "💳",
-        "Identity" => "🪪",
-        "ApiKey"   => "🔑",
-        "Note"     => "📝",
-        _          => "🌐"
-    };
+        return item;
+    }
 }

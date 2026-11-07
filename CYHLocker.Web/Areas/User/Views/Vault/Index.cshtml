@@ -1,227 +1,627 @@
 @model List<CYHLocker.Data.DTOs.VaultItemDto>
 @{
-    ViewData["Title"] = "Encrypted Vault";
+    ViewData["Title"] = "Encrypted Digital Vault";
     var categories = ViewBag.Categories as List<CYHLocker.Data.DTOs.VaultCategoryDto> ?? new();
+    var counts = ViewBag.Counts as CYHLocker.Data.DTOs.VaultSidebarCountsDto ?? new();
     var selectedCat = ViewBag.SelectedCategory as string;
     var searchQuery = ViewBag.SearchQuery as string;
+    var selectedType = ViewBag.SelectedType as string ?? "All";
+    var favoritesOnly = ViewBag.FavoritesOnly == true;
 }
 
-<div class="vault-container">
+<!-- ==========================================================================
+     3-COLUMN ENCRYPTED VAULT MASTER LAYOUT
+     ========================================================================== -->
+<div class="vault-master-layout">
 
-    <!-- Top Vault Control Bar -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-        <div>
-            <h2 class="user-welcome-title mb-1">🔐 My Encrypted Vault</h2>
-            <p class="user-welcome-sub">Zero-knowledge AES-256 protected credentials</p>
+    <!-- ────────────────────────────────────────────────────────────────────────
+         1. LEFT NAVIGATION SIDEBAR
+         ──────────────────────────────────────────────────────────────────────── -->
+    <aside class="vault-sidebar">
+        <!-- Quick Action: Add Item Dropdown -->
+        <div class="dropdown w-100 mb-2">
+            <button class="btn btn-glow w-100 d-flex align-items-center justify-content-center gap-2 py-2" type="button" data-bs-toggle="dropdown" style="border-radius:12px; font-weight:600;">
+                <span>➕</span> New Vault Item
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark w-100 shadow-lg" style="background:#0f172a; border-color:rgba(6,182,212,0.3); border-radius:12px;">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" asp-area="User" asp-controller="Vault" asp-action="Create" asp-route-type="Login">
+                        <span>🌐</span> Login / Social Media
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" asp-area="User" asp-controller="Vault" asp-action="Create" asp-route-type="Card">
+                        <span>💳</span> Payment Card (Credit/Debit)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" asp-area="User" asp-controller="Vault" asp-action="Create" asp-route-type="Document">
+                        <span>📄</span> Secure Encrypted Document
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" asp-area="User" asp-controller="Vault" asp-action="Create" asp-route-type="ApiKey">
+                        <span>🔑</span> Developer API Key / Secret
+                    </a>
+                </li>
+            </ul>
         </div>
-        <div class="d-flex gap-2">
-            <a asp-area="User" asp-controller="Vault" asp-action="Create" class="btn btn-glow d-inline-flex align-items-center gap-2" style="border-radius:12px; padding:10px 20px;">
-                <span>➕</span> Add New Password
-            </a>
-            <button type="button" class="btn btn-outline-glow" data-bs-toggle="modal" data-bs-target="#newCategoryModal" style="border-radius:12px; padding:10px 16px;">
-                📁 New Category
+
+        <!-- Navigation Group: Vault Types -->
+        <div class="vault-nav-group-title">Vault Items</div>
+        <ul class="vault-nav-list">
+            <li>
+                <a class="vault-nav-link @(selectedType == "All" && !favoritesOnly && string.IsNullOrEmpty(selectedCat) ? "active" : "")"
+                   asp-area="User" asp-controller="Vault" asp-action="Index">
+                    <span class="vault-nav-link-left">
+                        <span class="vault-nav-link-icon">📁</span>
+                        <span>All Items</span>
+                    </span>
+                    <span class="vault-nav-badge">@counts.TotalAll</span>
+                </a>
+            </li>
+            <li>
+                <a class="vault-nav-link @(selectedType == "Login" ? "active" : "")"
+                   asp-area="User" asp-controller="Vault" asp-action="Index" asp-route-type="Login">
+                    <span class="vault-nav-link-left">
+                        <span class="vault-nav-link-icon">🌐</span>
+                        <span>Logins & Social</span>
+                    </span>
+                    <span class="vault-nav-badge">@(counts.TotalLogins + counts.TotalSocial)</span>
+                </a>
+            </li>
+            <li>
+                <a class="vault-nav-link @(selectedType == "Card" ? "active" : "")"
+                   asp-area="User" asp-controller="Vault" asp-action="Index" asp-route-type="Card">
+                    <span class="vault-nav-link-left">
+                        <span class="vault-nav-link-icon">💳</span>
+                        <span>Payment Cards</span>
+                    </span>
+                    <span class="vault-nav-badge">@counts.TotalCards</span>
+                </a>
+            </li>
+            <li>
+                <a class="vault-nav-link @(selectedType == "Document" ? "active" : "")"
+                   asp-area="User" asp-controller="Vault" asp-action="Index" asp-route-type="Document">
+                    <span class="vault-nav-link-left">
+                        <span class="vault-nav-link-icon">📄</span>
+                        <span>Secure Docs</span>
+                    </span>
+                    <span class="vault-nav-badge">@counts.TotalDocuments</span>
+                </a>
+            </li>
+            <li>
+                <a class="vault-nav-link @(selectedType == "ApiKey" ? "active" : "")"
+                   asp-area="User" asp-controller="Vault" asp-action="Index" asp-route-type="ApiKey">
+                    <span class="vault-nav-link-left">
+                        <span class="vault-nav-link-icon">🔑</span>
+                        <span>API Keys</span>
+                    </span>
+                    <span class="vault-nav-badge">@counts.TotalApiKeys</span>
+                </a>
+            </li>
+            <li>
+                <a class="vault-nav-link @(favoritesOnly ? "active" : "")"
+                   asp-area="User" asp-controller="Vault" asp-action="Index" asp-route-favoritesOnly="true">
+                    <span class="vault-nav-link-left">
+                        <span class="vault-nav-link-icon text-warning">⭐</span>
+                        <span>Favorites</span>
+                    </span>
+                    <span class="vault-nav-badge">@counts.TotalFavorites</span>
+                </a>
+            </li>
+            <li>
+                <a class="vault-nav-link" asp-area="User" asp-controller="Vault" asp-action="Trash">
+                    <span class="vault-nav-link-left">
+                        <span class="vault-nav-link-icon text-danger">🗑️</span>
+                        <span>Trash</span>
+                    </span>
+                    <span class="vault-nav-badge">@counts.TotalTrash</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- Navigation Group: Folders / Categories -->
+        <div class="d-flex align-items-center justify-content-between mt-2 mb-1 px-2">
+            <span class="vault-nav-group-title m-0 p-0">Folders</span>
+            <button type="button" class="btn btn-sm btn-link text-info p-0 text-decoration-none" data-bs-toggle="modal" data-bs-target="#newCategoryModal" title="New Folder">
+                ➕ New
             </button>
         </div>
-    </div>
-
-    <!-- Search & Category Filters -->
-    <div class="glass-card p-3 mb-4" style="background:rgba(15, 22, 41, 0.7); border-color:rgba(6, 182, 212, 0.2);">
-        <form method="get" asp-area="User" asp-controller="Vault" asp-action="Index" class="row g-2 align-items-center">
-            <div class="col-12 col-md-5">
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-0 text-muted">🔍</span>
-                    <input type="text" name="q" value="@searchQuery" class="form-control auth-input" placeholder="Search by site, title, or domain (e.g. google, bank)..." />
-                </div>
-            </div>
-            <div class="col-12 col-md-5 d-flex flex-wrap gap-2 align-items-center">
-                <a asp-area="User" asp-controller="Vault" asp-action="Index" 
-                   class="badge text-decoration-none py-2 px-3 @(string.IsNullOrEmpty(selectedCat) ? "bg-info text-dark" : "bg-dark text-muted border border-secondary")" style="border-radius:20px;">
-                    All (@Model.Count)
-                </a>
-                @foreach (var cat in categories)
-                {
-                    <a asp-area="User" asp-controller="Vault" asp-action="Index" asp-route-categoryId="@cat.Id"
-                       class="badge text-decoration-none py-2 px-3 @(selectedCat == cat.Id ? "bg-info text-dark" : "bg-dark text-muted border border-secondary")"
-                       style="border-radius:20px;">
-                        @cat.Icon @cat.Name (@cat.TotalItems)
+        <ul class="vault-nav-list">
+            @foreach (var cat in categories)
+            {
+                <li>
+                    <a class="vault-nav-link @(selectedCat == cat.Id ? "active" : "")"
+                       asp-area="User" asp-controller="Vault" asp-action="Index" asp-route-categoryId="@cat.Id">
+                        <span class="vault-nav-link-left">
+                            <span class="vault-nav-link-icon">@cat.Icon</span>
+                            <span class="text-truncate" style="max-width:130px;">@cat.Name</span>
+                        </span>
+                        <span class="vault-nav-badge">@cat.TotalItems</span>
                     </a>
-                }
-            </div>
-            <div class="col-12 col-md-2 text-md-end">
-                <button type="submit" class="btn btn-sm btn-outline-glow w-100">Filter</button>
-            </div>
-        </form>
-    </div>
+                </li>
+            }
+        </ul>
 
-    <!-- Vault Items Grid -->
-    @if (Model.Count == 0)
-    {
-        <div class="glass-card text-center py-5 p-4" style="border: 2px dashed rgba(6, 182, 212, 0.25);">
-            <div style="font-size:3.5rem;" class="mb-3">🛡️</div>
-            <h4 class="fw-bold text-light mb-2">No Vault Items Found</h4>
-            <p class="text-muted small mx-auto mb-4" style="max-width:440px;">
-                You haven't saved any credentials in this category yet. Click below to add your first password with AES-256-GCM encryption!
-            </p>
-            <a asp-area="User" asp-controller="Vault" asp-action="Create" class="btn btn-glow">
-                ➕ Add Your First Credential
+        <!-- Pro Tier Banner -->
+        <div class="vault-pro-banner text-center mt-3">
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                <span style="font-size:1.1rem;">💎</span>
+                <span class="fw-bold text-light small">CYH Pro Vault</span>
+            </div>
+            <p class="text-muted small mb-2" style="font-size:0.75rem;">Unlimited items, multi-device cloud sync & Razorpay billing</p>
+            <a asp-area="User" asp-controller="Dashboard" asp-action="Index" class="btn btn-sm btn-outline-glow w-100 py-1" style="font-size:0.75rem;">
+                Upgrade Now →
             </a>
         </div>
-    }
-    else
-    {
-        <div class="row g-4">
-            @foreach (var item in Model)
-            {
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="user-card h-100 position-relative d-flex flex-column justify-content-between" style="border-radius:18px;">
-                        
-                        <!-- Top header of card -->
-                        <div>
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="user-stat-icon teal m-0" style="width:40px; height:40px; font-size:1.2rem;">
-                                        @item.ItemIcon
-                                    </div>
-                                    <div>
-                                        <h5 class="fw-bold mb-0 text-light" style="font-size:1.05rem;">
-                                            <a asp-area="User" asp-controller="Vault" asp-action="Details" asp-route-id="@item.Id" class="text-decoration-none text-light">
-                                                @item.Title
-                                            </a>
-                                        </h5>
-                                        <small class="text-muted">@(item.UrlDomain ?? item.ItemType)</small>
-                                    </div>
-                                </div>
-                                <form asp-area="User" asp-controller="Vault" asp-action="ToggleFavorite" asp-route-id="@item.Id" method="post">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent" title="Toggle Favorite">
-                                        <span style="font-size:1.3rem;">@(item.IsFavorite ? "⭐" : "☆")</span>
-                                    </button>
-                                </form>
-                            </div>
+    </aside>
 
-                            <!-- Category & Strength Tags -->
-                            <div class="d-flex gap-2 align-items-center mb-3">
-                                @if (!string.IsNullOrEmpty(item.CategoryName))
-                                {
-                                    <span class="badge" style="background:rgba(6,182,212,0.15); color:#67e8f9; border:1px solid rgba(6,182,212,0.3);">
-                                        📁 @item.CategoryName
-                                    </span>
-                                }
-                                <span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3);">
-                                    🛡️ @item.PasswordStrength
-                                </span>
-                            </div>
+    <!-- ────────────────────────────────────────────────────────────────────────
+         2. CENTER VAULT FEED (CARDS & SEARCH)
+         ──────────────────────────────────────────────────────────────────────── -->
+    <main class="vault-center-feed">
+        <!-- Top Search and Filter Bar -->
+        <div class="vault-control-card">
+            <form method="get" asp-area="User" asp-controller="Vault" asp-action="Index" class="row g-2 align-items-center">
+                <input type="hidden" name="type" value="@selectedType" />
+                <input type="hidden" name="categoryId" value="@selectedCat" />
+                <input type="hidden" name="favoritesOnly" value="@(favoritesOnly ? "true" : "false")" />
 
-                            <!-- Username / Email Field with Copy -->
-                            @if (!string.IsNullOrEmpty(item.Username))
-                            {
-                                <div class="p-2 px-3 rounded mb-2 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);">
-                                    <span class="small text-muted text-truncate" style="max-width:180px;">@item.Username</span>
-                                    <button type="button" class="btn btn-sm btn-link text-info p-0 text-decoration-none copy-btn" data-copy="@item.Username" title="Copy Username">
-                                        📋 Copy
-                                    </button>
-                                </div>
-                            }
-
-                            <!-- Password Field with Quick Copy -->
-                            <div class="p-2 px-3 rounded mb-3 d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);">
-                                <span class="small font-monospace text-muted">••••••••••••</span>
-                                <button type="button" class="btn btn-sm btn-link text-warning p-0 text-decoration-none copy-btn" data-copy="@item.Password" title="Copy Encrypted Password">
-                                    🔑 Copy
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Card Action Footer -->
-                        <div class="d-flex justify-content-between align-items-center pt-3 border-top" style="border-color:rgba(255,255,255,0.06) !important;">
-                            @if (!string.IsNullOrEmpty(item.Url))
-                            {
-                                <a href="@item.Url" target="_blank" rel="noopener noreferrer" class="small text-info text-decoration-none d-flex align-items-center gap-1">
-                                    Launch Site ↗
-                                </a>
-                            }
-                            else
-                            {
-                                <span></span>
-                            }
-                            <div class="d-flex gap-2">
-                                <a asp-area="User" asp-controller="Vault" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-glow py-1 px-3">
-                                    View
-                                </a>
-                                <a asp-area="User" asp-controller="Vault" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary py-1 px-2 text-light">
-                                    ✏️
-                                </a>
-                            </div>
-                        </div>
-
+                <div class="col-12 col-md-8">
+                    <div class="vault-search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="vaultSearchInput" name="q" value="@searchQuery" placeholder="Search by site, card, title, domain, or key..." autocomplete="off" />
+                        <span class="kbd-hint">Ctrl + K</span>
                     </div>
                 </div>
-            }
+                <div class="col-12 col-md-4 d-flex justify-content-md-end gap-2">
+                    <button type="submit" class="btn btn-sm btn-glow px-3">Filter</button>
+                    @if (!string.IsNullOrEmpty(searchQuery) || !string.IsNullOrEmpty(selectedCat) || selectedType != "All" || favoritesOnly)
+                    {
+                        <a asp-area="User" asp-controller="Vault" asp-action="Index" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    }
+                </div>
+            </form>
         </div>
-    }
+
+        <!-- Section Title & Item Count Header -->
+        <div class="d-flex align-items-center justify-content-between px-2">
+            <div>
+                <h4 class="text-light fw-bold mb-0">
+                    @(selectedType == "All" ? "All Vault Items" : selectedType == "Card" ? "Payment Cards" : selectedType == "Document" ? "Secure Documents" : selectedType == "ApiKey" ? "Developer API Keys" : "Logins & Credentials")
+                </h4>
+                <span class="text-muted small">Showing @Model.Count item(s) protected by AES-256-GCM</span>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-area="User" asp-controller="Vault" asp-action="Create" asp-route-type="@(selectedType == "All" ? "Login" : selectedType)" class="btn btn-sm btn-glow">
+                    ➕ Add @(selectedType == "All" ? "Item" : selectedType)
+                </a>
+            </div>
+        </div>
+
+        <!-- Items Grid -->
+        @if (Model.Count == 0)
+        {
+            <div class="glass-card text-center py-5 p-4" style="border: 2px dashed rgba(6, 182, 212, 0.25); border-radius:18px;">
+                <div style="font-size:3.5rem;" class="mb-3">🛡️</div>
+                <h4 class="fw-bold text-light mb-2">No Vault Items Found</h4>
+                <p class="text-muted small mx-auto mb-4" style="max-width:440px;">
+                    You haven't saved any credentials in this category yet. Click below to add your first encrypted item!
+                </p>
+                <a asp-area="User" asp-controller="Vault" asp-action="Create" asp-route-type="@(selectedType == "All" ? "Login" : selectedType)" class="btn btn-glow">
+                    ➕ Add Item Now
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="vault-items-grid">
+                @foreach (var item in Model)
+                {
+                    <div class="vault-item-card" onclick="openItemDrawer('@item.Id')">
+                        <!-- Card Header -->
+                        <div class="vault-card-head">
+                            <div class="vault-brand-avatar">
+                                @if (!string.IsNullOrEmpty(item.ItemIcon) && item.ItemIcon.StartsWith("http"))
+                                {
+                                    <img src="@item.ItemIcon" alt="@item.Title" onerror="this.onerror=null; this.parentElement.innerText='🌐';" />
+                                }
+                                else
+                                {
+                                    <span>@(string.IsNullOrEmpty(item.ItemIcon) ? "🌐" : item.ItemIcon)</span>
+                                }
+                            </div>
+                            <div class="vault-card-meta">
+                                <h6 class="vault-card-title" title="@item.Title">@item.Title</h6>
+                                <p class="vault-card-subtitle" title="@item.SecondaryInfo">
+                                    @(string.IsNullOrEmpty(item.SecondaryInfo) ? item.UrlDomain ?? item.ItemType : item.SecondaryInfo)
+                                </p>
+                            </div>
+                            <form method="post" asp-area="User" asp-controller="Vault" asp-action="ToggleFavorite" asp-route-id="@item.Id" onclick="event.stopPropagation();">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="vault-star-btn @(item.IsFavorite ? "fav" : "")" title="Toggle Favorite">
+                                    ★
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Card Badges -->
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="vault-type-badge @(item.ItemType.ToLower())">
+                                @item.ItemType
+                            </span>
+                            @if (!string.IsNullOrEmpty(item.CategoryName))
+                            {
+                                <span class="badge" style="background:rgba(6,182,212,0.15); color:#67e8f9; font-size:0.7rem; border-radius:6px;">
+                                    @item.CategoryName
+                                </span>
+                            }
+                            @if (item.ItemType == "Login" && !string.IsNullOrEmpty(item.PasswordStrength))
+                            {
+                                <span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; font-size:0.68rem; margin-left:auto;">
+                                    @item.PasswordStrength
+                                </span>
+                            }
+                        </div>
+
+                        <!-- Card Footer & Quick Copy -->
+                        <div class="vault-card-footer" onclick="event.stopPropagation();">
+                            <div class="vault-action-btn-group">
+                                @if (item.ItemType == "Card")
+                                {
+                                    <button type="button" class="vault-mini-btn" onclick="copyCardNumber('@item.Id', this)" title="Copy Card Number">
+                                        📋 Copy Number
+                                    </button>
+                                }
+                                else if (item.ItemType == "Document")
+                                {
+                                    <button type="button" class="vault-mini-btn" onclick="openItemDrawer('@item.Id')" title="Read Document">
+                                        📖 Read Doc
+                                    </button>
+                                }
+                                else if (item.ItemType == "ApiKey")
+                                {
+                                    <button type="button" class="vault-mini-btn" onclick="copyApiKey('@item.Id', this)" title="Copy API Key">
+                                        📋 Copy Key
+                                    </button>
+                                }
+                                else
+                                {
+                                    @if (!string.IsNullOrEmpty(item.Username))
+                                    {
+                                        <button type="button" class="vault-mini-btn" onclick="copyText('@item.Username', this)" title="Copy Username">
+                                            👤 User
+                                        </button>
+                                    }
+                                    <button type="button" class="vault-mini-btn" onclick="copyPasswordDirect('@item.Id', this)" title="Copy Password">
+                                        🔑 Pass
+                                    </button>
+                                }
+                            </div>
+                            <span class="small text-muted" style="font-size:0.75rem;">
+                                @item.UpdatedAt.ToString("dd MMM")
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </main>
+
+    <!-- ────────────────────────────────────────────────────────────────────────
+         3. RIGHT DETAIL SLIDE-OUT DRAWER
+         ──────────────────────────────────────────────────────────────────────── -->
+    <aside class="vault-detail-drawer" id="itemDetailDrawer">
+        <!-- Default Empty State -->
+        <div id="drawerEmptyState" class="drawer-empty-state">
+            <div style="font-size:3rem;" class="mb-2">👈</div>
+            <h6 class="fw-bold text-light">Select any item to inspect</h6>
+            <p class="small text-muted mb-0">Click on any card to view decrypted credentials, virtual card preview, or document notes.</p>
+        </div>
+
+        <!-- Dynamic Loaded Content Area -->
+        <div id="drawerContent" style="display:none;">
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom border-secondary">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="vault-brand-avatar" id="drawerAvatar">
+                        🌐
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-light mb-0" id="drawerTitle">Title</h5>
+                        <span class="small text-info" id="drawerSubtitle">Subtitle</span>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none" onclick="closeDrawer()" title="Close Drawer">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Virtual Credit Card (Only for Card Type) -->
+            <div id="drawerVirtualCard" class="virtual-credit-card" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="vcard-chip"></div>
+                    <span id="vcardBrand" class="fw-bold" style="font-size:1.1rem; letter-spacing:0.05em;">VISA</span>
+                </div>
+                <div class="vcard-number" id="vcardNumber">•••• •••• •••• ••••</div>
+                <div class="vcard-footer">
+                    <div>
+                        <div class="small text-muted" style="font-size:0.6rem;">CARDHOLDER</div>
+                        <div class="vcard-holder" id="vcardHolder">NAME SURNAME</div>
+                    </div>
+                    <div>
+                        <div class="small text-muted" style="font-size:0.6rem;">EXPIRES</div>
+                        <div class="vcard-exp" id="vcardExpiry">MM/YY</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Decrypted Fields -->
+            <div id="drawerFields"></div>
+
+            <!-- Notes Field -->
+            <div class="drawer-field-card mt-2" id="drawerNotesCard" style="display:none;">
+                <div class="drawer-field-label">Encrypted Notes</div>
+                <div class="small text-light" id="drawerNotes" style="white-space: pre-wrap; font-family:inherit;"></div>
+            </div>
+
+            <!-- Action Buttons Footer -->
+            <div class="d-flex gap-2 mt-4 pt-3 border-top border-secondary">
+                <a id="drawerEditBtn" href="#" class="btn btn-sm btn-glow flex-grow-1">
+                    ✏️ Edit Item
+                </a>
+                <form id="drawerDeleteForm" method="post" action="" onsubmit="return confirm('Move this item to Trash?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        🗑️ Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>
+
 </div>
 
-<!-- Modal: New Category -->
+<!-- Backdrop for Mobile Drawer -->
+<div class="vault-drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+
+<!-- ==========================================================================
+     NEW CATEGORY MODAL
+     ========================================================================== -->
 <div class="modal fade" id="newCategoryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content glass-card" style="background:#0c1222; border-color:rgba(6,182,212,0.3);">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold text-light">📁 Create Vault Category</h5>
+        <div class="modal-content glass-card" style="background:#0f172a; border-color:rgba(6,182,212,0.3); color:#fff;">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title fw-bold">📁 Create New Folder / Category</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form asp-area="User" asp-controller="Vault" asp-action="CreateCategory" method="post">
+            <form method="post" asp-area="User" asp-controller="Vault" asp-action="CreateCategory">
                 @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label text-muted small">Category Name</label>
-                        <input name="Name" class="form-control auth-input" placeholder="e.g. Social Media, Banking, Work..." required />
+                        <label class="form-label small text-muted">Folder Name</label>
+                        <input type="text" name="Name" class="form-control auth-input" placeholder="e.g. Work, Banking, Social Media" required />
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label text-muted small">Icon / Emoji</label>
-                            <input name="Icon" class="form-control auth-input" value="📁" />
+                            <label class="form-label small text-muted">Emoji Icon</label>
+                            <input type="text" name="Icon" class="form-control auth-input" value="📁" />
                         </div>
                         <div class="col-6">
-                            <label class="form-label text-muted small">Color Tag</label>
-                            <input name="Color" class="form-control auth-input" value="#06b6d4" />
+                            <label class="form-label small text-muted">Color Accent</label>
+                            <input type="color" name="Color" class="form-control form-control-color w-100" value="#06b6d4" style="height:42px; background:transparent; border-color:rgba(6,182,212,0.25);" />
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-sm btn-glow">Save Category</button>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-glow">Create Folder</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Toast notification for copy to clipboard -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
-    <div id="copyToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-            <div class="toast-body" id="toastMessage">
-                ✓ Copied to clipboard!
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    </div>
-</div>
-
+<!-- ==========================================================================
+     DRAWER & INTERACTIVE JAVASCRIPT
+     ========================================================================== -->
 @section Scripts {
-    <script>
-        document.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const text = this.getAttribute('data-copy');
-                if (text) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        const toastEl = document.getElementById('copyToast');
-                        const toast = new bootstrap.Toast(toastEl, { delay: 2000 });
-                        toast.show();
-                    });
+<script>
+    let activePasswordTimer = null;
+
+    // Open and Populate Right Slide-out Drawer via AJAX
+    function openItemDrawer(itemId) {
+        const drawer = document.getElementById('itemDetailDrawer');
+        const backdrop = document.getElementById('drawerBackdrop');
+        const emptyState = document.getElementById('drawerEmptyState');
+        const content = document.getElementById('drawerContent');
+
+        fetch(`/User/Vault/GetItemDetailsJson?id=${itemId}`)
+            .then(res => res.json())
+            .then(res => {
+                if (!res.success || !res.data) return;
+                const d = res.data;
+
+                // Fill Header
+                document.getElementById('drawerTitle').innerText = d.title || 'Untitled';
+                document.getElementById('drawerSubtitle').innerText = d.secondaryInfo || d.itemType;
+                
+                const avatar = document.getElementById('drawerAvatar');
+                if (d.itemIcon && d.itemIcon.startsWith('http')) {
+                    avatar.innerHTML = `<img src="${d.itemIcon}" alt="icon" style="width:28px; height:28px; object-fit:contain;" />`;
+                } else {
+                    avatar.innerHTML = `<span>${d.itemIcon || '🌐'}</span>`;
+                }
+
+                // Edit & Delete links
+                document.getElementById('drawerEditBtn').href = `/User/Vault/Edit/${d.id}`;
+                document.getElementById('drawerDeleteForm').action = `/User/Vault/Delete/${d.id}`;
+
+                // Virtual Card Check
+                const vCard = document.getElementById('drawerVirtualCard');
+                if (d.itemType === 'Card') {
+                    vCard.style.display = 'flex';
+                    document.getElementById('vcardBrand').innerText = d.cardBrand || 'CARD';
+                    document.getElementById('vcardNumber').innerText = d.cardNumber ? formatCardNumber(d.cardNumber) : `•••• •••• •••• ${d.cardLast4 || '4021'}`;
+                    document.getElementById('vcardHolder').innerText = (d.cardholderName || 'CARDHOLDER').toUpperCase();
+                    document.getElementById('vcardExpiry').innerText = `${d.cardExpiryMonth || 'MM'}/${d.cardExpiryYear || 'YY'}`;
+                } else {
+                    vCard.style.display = 'none';
+                }
+
+                // Populate Fields based on Type
+                const fieldsContainer = document.getElementById('drawerFields');
+                fieldsContainer.innerHTML = '';
+
+                if (d.itemType === 'Card') {
+                    fieldsContainer.innerHTML += createFieldHtml('Card Number', d.cardNumber, true);
+                    fieldsContainer.innerHTML += createFieldHtml('CVV / Security Code', d.cardCvv, true, true);
+                    if (d.cardPin) fieldsContainer.innerHTML += createFieldHtml('Card PIN', d.cardPin, true, true);
+                } else if (d.itemType === 'Document') {
+                    if (d.docFileName) fieldsContainer.innerHTML += createFieldHtml('File Name', d.docFileName, false);
+                    if (d.docFileSize) fieldsContainer.innerHTML += createFieldHtml('File Size', d.docFileSize, false);
+                    if (d.docContent) fieldsContainer.innerHTML += createFieldHtml('Document Content', d.docContent, false, false, true);
+                } else if (d.itemType === 'ApiKey') {
+                    fieldsContainer.innerHTML += createFieldHtml('API Key / Client ID', d.apiKey, true);
+                    fieldsContainer.innerHTML += createFieldHtml('API Secret Key', d.apiSecret, true, true);
+                    if (d.url) fieldsContainer.innerHTML += createFieldHtml('Endpoint URL', d.url, false);
+                } else {
+                    // Login / Social
+                    if (d.username) fieldsContainer.innerHTML += createFieldHtml('Username / Email', d.username, true);
+                    if (d.password) fieldsContainer.innerHTML += createFieldHtml('Password', d.password, true, true);
+                    if (d.url) fieldsContainer.innerHTML += createLinkFieldHtml('Website URL', d.url);
+                }
+
+                // Notes
+                const notesCard = document.getElementById('drawerNotesCard');
+                if (d.notes && d.itemType !== 'Document') {
+                    notesCard.style.display = 'block';
+                    document.getElementById('drawerNotes').innerText = d.notes;
+                } else {
+                    notesCard.style.display = 'none';
+                }
+
+                emptyState.style.display = 'none';
+                content.style.display = 'block';
+                drawer.classList.add('open');
+                backdrop.classList.add('show');
+            })
+            .catch(err => console.error(err));
+    }
+
+    function closeDrawer() {
+        document.getElementById('itemDetailDrawer').classList.remove('open');
+        document.getElementById('drawerBackdrop').classList.remove('show');
+    }
+
+    function createFieldHtml(label, value, hasCopy = false, isMasked = false, isTextarea = false) {
+        if (!value) return '';
+        const id = 'f_' + Math.random().toString(36).substring(2, 9);
+        return `
+            <div class="drawer-field-card">
+                <div class="drawer-field-label">${label}</div>
+                <div class="drawer-field-val">
+                    <span id="${id}" data-raw="${escapeHtml(value)}">${isMasked ? '••••••••••••' : escapeHtml(value)}</span>
+                    <div class="d-flex gap-1">
+                        ${isMasked ? `<button type="button" class="vault-mini-btn py-0 px-2" onclick="toggleFieldMask('${id}', this)">👁️</button>` : ''}
+                        ${hasCopy ? `<button type="button" class="vault-mini-btn py-0 px-2" onclick="copyText('${escapeHtml(value)}', this)">📋</button>` : ''}
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function createLinkFieldHtml(label, url) {
+        return `
+            <div class="drawer-field-card">
+                <div class="drawer-field-label">${label}</div>
+                <div class="drawer-field-val">
+                    <a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="text-info text-truncate text-decoration-none" style="max-width:240px;">
+                        ${escapeHtml(url)} ↗
+                    </a>
+                    <button type="button" class="vault-mini-btn py-0 px-2" onclick="copyText('${escapeHtml(url)}', this)">📋</button>
+                </div>
+            </div>`;
+    }
+
+    function toggleFieldMask(spanId, btn) {
+        const span = document.getElementById(spanId);
+        if (!span) return;
+        const raw = span.getAttribute('data-raw');
+        if (span.innerText === '••••••••••••') {
+            span.innerText = raw;
+            btn.innerText = '🔒';
+            // Auto-hide after 10 seconds for high security
+            setTimeout(() => {
+                span.innerText = '••••••••••••';
+                btn.innerText = '👁️';
+            }, 10000);
+        } else {
+            span.innerText = '••••••••••••';
+            btn.innerText = '👁️';
+        }
+    }
+
+    // Direct Copy Helpers
+    function copyText(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+            const original = btn.innerHTML;
+            btn.innerHTML = '✓ Copied!';
+            btn.style.borderColor = '#10b981';
+            btn.style.color = '#34d399';
+            setTimeout(() => {
+                btn.innerHTML = original;
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }, 2000);
+        });
+    }
+
+    function copyPasswordDirect(itemId, btn) {
+        fetch(`/User/Vault/GetItemDetailsJson?id=${itemId}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success && res.data && res.data.password) {
+                    copyText(res.data.password, btn);
                 }
             });
-        });
-    </script>
+    }
+
+    function copyCardNumber(itemId, btn) {
+        fetch(`/User/Vault/GetItemDetailsJson?id=${itemId}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success && res.data && res.data.cardNumber) {
+                    copyText(res.data.cardNumber, btn);
+                }
+            });
+    }
+
+    function copyApiKey(itemId, btn) {
+        fetch(`/User/Vault/GetItemDetailsJson?id=${itemId}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success && res.data && res.data.apiKey) {
+                    copyText(res.data.apiKey, btn);
+                }
+            });
+    }
+
+    function formatCardNumber(num) {
+        return num.replace(/\D/g, '').replace(/(\d{4})/g, '$1 ').trim();
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Ctrl+K Shortcut to Focus Search Input
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            const input = document.getElementById('vaultSearchInput');
+            if (input) input.focus();
+        }
+    });
+</script>
 }

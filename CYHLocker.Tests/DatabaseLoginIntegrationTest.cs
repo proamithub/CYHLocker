@@ -116,4 +116,39 @@ public class DatabaseLoginIntegrationTest
             Assert.Equal(4, count);
         }
     }
+
+    [Fact]
+    public async Task Deploy_Phase3_ExtendedVaultSchema_ToDatabase()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "ConnectionStrings:DefaultConnection", "Server=localhost;Database=CYHLockerDB;Trusted_Connection=True;TrustServerCertificate=True;" }
+            })
+            .Build();
+
+        var scriptPath = @"D:\MyAppAi\CYHLocker\Scripts\06_Extended_Vault_Phase3.sql";
+        var sqlText = await File.ReadAllTextAsync(scriptPath);
+
+        await using var con = new Microsoft.Data.SqlClient.SqlConnection(config.GetConnectionString("DefaultConnection"));
+        await con.OpenAsync();
+
+        var batches = System.Text.RegularExpressions.Regex.Split(sqlText, @"^\s*GO\s*$", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        foreach (var batch in batches)
+        {
+            var trimmed = batch.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed)) continue;
+            await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(trimmed, con);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        // Verify columns CardBrand, CardLast4, SecondaryInfo exist
+        await using (var checkCmd = new Microsoft.Data.SqlClient.SqlCommand(
+            "SELECT COUNT(1) FROM sys.columns WHERE object_id = OBJECT_ID('VaultItems_CYH') AND name IN ('CardBrand', 'CardLast4', 'SecondaryInfo')", con))
+        {
+            var count = (int)(await checkCmd.ExecuteScalarAsync() ?? 0);
+            Assert.Equal(3, count);
+        }
+    }
 }
