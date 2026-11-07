@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using CYHLocker.Logic.Encryption;
 using CYHLocker.Logic.Interfaces;
@@ -5,9 +6,26 @@ using CYHLocker.Logic.Services;
 using CYHLocker.Repository.Interfaces;
 using CYHLocker.Repository.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// High-speed Brotli & Gzip Response Compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
 
 // Services
 builder.Services.AddControllers();
@@ -74,6 +92,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseResponseCompression();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();

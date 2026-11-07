@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using CYHLocker.Logic.Interfaces;
 
@@ -5,6 +6,8 @@ namespace CYHLocker.Logic.Services;
 
 public class FaviconService : IFaviconService
 {
+    private static readonly ConcurrentDictionary<string, string> IconCache = new(StringComparer.OrdinalIgnoreCase);
+
     // Dictionary of well-known platforms mapped to trusted high-res CDN SVG/PNG icons
     private static readonly Dictionary<string, string> BrandIcons = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -60,6 +63,16 @@ public class FaviconService : IFaviconService
     };
 
     public string ResolveIcon(string? url, string? title, string itemType = "Login", string? cardBrand = null)
+    {
+        var cacheKey = $"{url}|{title}|{itemType}|{cardBrand}";
+        if (IconCache.TryGetValue(cacheKey, out var cached)) return cached;
+
+        var resolved = ComputeIcon(url, title, itemType, cardBrand);
+        IconCache.TryAdd(cacheKey, resolved);
+        return resolved;
+    }
+
+    private string ComputeIcon(string? url, string? title, string itemType, string? cardBrand)
     {
         // 1. Payment Cards
         if (string.Equals(itemType, "Card", StringComparison.OrdinalIgnoreCase))

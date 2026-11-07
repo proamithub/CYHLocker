@@ -1,10 +1,28 @@
+using System.IO.Compression;
 using CYHLocker.Logic.Encryption;
 using CYHLocker.Logic.Interfaces;
 using CYHLocker.Logic.Services;
 using CYHLocker.Repository.Interfaces;
 using CYHLocker.Repository.Repositories;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// High-speed Brotli & Gzip Response Compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
 
 builder.Services.AddControllersWithViews();
 
@@ -55,7 +73,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseResponseCompression();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Cache static CSS/JS/images for 7 days in client browser
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=604800");
+    }
+});
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
