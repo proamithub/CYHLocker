@@ -122,19 +122,67 @@
              ───────────────────────────────────────────────────────────── -->
         else if (Model.ItemType == "Document")
         {
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <div class="drawer-field-card">
+                        <div class="drawer-field-label">Document Name</div>
+                        <div class="drawer-field-val">
+                            <span>@(Model.DocFileName ?? Model.Title)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="drawer-field-card">
+                        <div class="drawer-field-label">File Size / Format</div>
+                        <div class="drawer-field-val">
+                            <span>@(Model.DocFileSize ?? "Encrypted Doc")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label class="text-muted small fw-semibold text-uppercase">Document Content (Decrypted)</label>
-                    @if (!string.IsNullOrEmpty(Model.DocContent))
-                    {
-                        <button type="button" class="btn btn-sm btn-outline-glow copy-btn" data-copy="@Model.DocContent">
-                            📋 Copy Text
+                    <label class="text-muted small fw-semibold text-uppercase">Decrypted Document Payload</label>
+                    <div class="d-flex gap-2">
+                        @if (!string.IsNullOrEmpty(Model.DocContent) && Model.DocContent.StartsWith("data:"))
+                        {
+                            <button type="button" class="btn btn-sm btn-glow" onclick="downloadDataFile('@(Model.DocFileName ?? "decrypted_file.bin")', '@Model.DocContent')">
+                                📥 Download Decrypted File
+                            </button>
+                        }
+                        else if (!string.IsNullOrEmpty(Model.DocContent))
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-glow copy-btn" data-copy="@Model.DocContent">
+                                📋 Copy Text
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.DocContent) && Model.DocContent.StartsWith("data:image/"))
+                {
+                    <div class="p-3 text-center rounded mb-3" style="background:rgba(7,11,22,0.85); border:1px solid rgba(6,182,212,0.2);">
+                        <img src="@Model.DocContent" alt="Encrypted Document Preview" class="img-fluid rounded" style="max-height:360px; object-fit:contain;" />
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(Model.DocContent) && Model.DocContent.StartsWith("data:"))
+                {
+                    <div class="p-4 rounded text-center" style="background:rgba(7,11,22,0.85); border:1px solid rgba(6,182,212,0.2);">
+                        <div style="font-size:3rem;" class="mb-2">📄</div>
+                        <h6 class="text-light fw-bold mb-1">@(Model.DocFileName ?? "Confidential Document")</h6>
+                        <p class="text-muted small mb-3">Encrypted binary payload is safe and stored with AES-256-GCM.</p>
+                        <button type="button" class="btn btn-glow px-4" onclick="downloadDataFile('@(Model.DocFileName ?? "decrypted_file.bin")', '@Model.DocContent')">
+                            📥 Download & Decrypt File
                         </button>
-                    }
-                </div>
-                <div class="p-3 rounded font-monospace" style="background:rgba(7,11,22,0.85); border:1px solid rgba(6,182,212,0.2); white-space:pre-wrap; color:#f8fafc; font-size:0.92rem; min-height:160px;">
-                    @(Model.DocContent ?? "(Empty Document)")
-                </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3 rounded font-monospace" style="background:rgba(7,11,22,0.85); border:1px solid rgba(6,182,212,0.2); white-space:pre-wrap; color:#f8fafc; font-size:0.92rem; min-height:160px;">
+                        @(Model.DocContent ?? "(Empty Document)")
+                    </div>
+                }
             </div>
         }
         <!-- ─────────────────────────────────────────────────────────────
@@ -295,5 +343,14 @@
                 }
             });
         });
+
+        function downloadDataFile(fileName, dataUrl) {
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
     </script>
 }

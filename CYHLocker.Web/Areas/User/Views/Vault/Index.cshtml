@@ -481,7 +481,21 @@
                 } else if (d.itemType === 'Document') {
                     if (d.docFileName) fieldsContainer.innerHTML += createFieldHtml('File Name', d.docFileName, false);
                     if (d.docFileSize) fieldsContainer.innerHTML += createFieldHtml('File Size', d.docFileSize, false);
-                    if (d.docContent) fieldsContainer.innerHTML += createFieldHtml('Document Content', d.docContent, false, false, true);
+                    if (d.docContent) {
+                        if (d.docContent.startsWith('data:')) {
+                            fieldsContainer.innerHTML += `
+                                <div class="drawer-field-card">
+                                    <div class="drawer-field-label">Decrypted File Download</div>
+                                    <div class="drawer-field-val pt-2">
+                                        <button type="button" class="btn btn-sm btn-glow w-100" onclick="downloadDrawerFile('${escapeHtml(d.docFileName || 'decrypted_file.bin')}', '${d.docContent}')">
+                                            📥 Download Decrypted File
+                                        </button>
+                                    </div>
+                                </div>`;
+                        } else {
+                            fieldsContainer.innerHTML += createFieldHtml('Document Content', d.docContent, true, false, true);
+                        }
+                    }
                 } else if (d.itemType === 'ApiKey') {
                     fieldsContainer.innerHTML += createFieldHtml('API Key / Client ID', d.apiKey, true);
                     fieldsContainer.innerHTML += createFieldHtml('API Secret Key', d.apiSecret, true, true);
@@ -609,6 +623,15 @@
 
     function formatCardNumber(num) {
         return num.replace(/\D/g, '').replace(/(\d{4})/g, '$1 ').trim();
+    }
+
+    function downloadDrawerFile(fileName, dataUrl) {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     function escapeHtml(str) {

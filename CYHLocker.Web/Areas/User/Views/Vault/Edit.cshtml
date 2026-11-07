@@ -94,17 +94,29 @@
             else if (selectedType == "Document")
             {
                 <div class="row g-3 mb-3">
+                    <div class="col-12">
+                        <div class="p-3 rounded-3" style="background:rgba(6,182,212,0.06); border:1px dashed rgba(6,182,212,0.35);">
+                            <label class="form-label text-light fw-semibold small d-flex justify-content-between align-items-center mb-2">
+                                <span>📎 Replace / Upload File (PDF, Image, Doc, Text)</span>
+                                <span class="badge bg-info text-dark" id="fileStatusBadge" style="display:none;">Ready</span>
+                            </label>
+                            <input type="file" id="filePickerInput" class="form-control auth-input" onchange="onFileSelected(this)" />
+                            <span class="small text-muted mt-1 d-block" style="font-size:0.75rem;">
+                                Uploading a new file will replace the encrypted payload with the new file contents.
+                            </span>
+                        </div>
+                    </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label text-light fw-semibold small">File Name</label>
-                        <input asp-for="DocFileName" class="form-control auth-input" />
+                        <input asp-for="DocFileName" id="DocFileName" class="form-control auth-input" />
                     </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label text-light fw-semibold small">File Size / Format</label>
-                        <input asp-for="DocFileSize" class="form-control auth-input" />
+                        <input asp-for="DocFileSize" id="DocFileSize" class="form-control auth-input" />
                     </div>
                     <div class="col-12">
                         <label class="form-label text-light fw-semibold small">Encrypted Document Body / Markdown Notes</label>
-                        <textarea asp-for="DocContent" rows="6" class="form-control auth-input font-monospace"></textarea>
+                        <textarea asp-for="DocContent" id="DocContent" rows="6" class="form-control auth-input font-monospace"></textarea>
                     </div>
                 </div>
             }
@@ -183,6 +195,43 @@
         } else {
             input.type = 'password';
             btn.innerText = '👁️';
+        }
+    }
+
+    function onFileSelected(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const docFileName = document.getElementById('DocFileName');
+        const docFileSize = document.getElementById('DocFileSize');
+        const docContent = document.getElementById('DocContent');
+        const statusBadge = document.getElementById('fileStatusBadge');
+
+        docFileName.value = file.name;
+        const sizeStr = file.size > 1024 * 1024 
+            ? (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+            : (file.size / 1024).toFixed(1) + ' KB';
+        docFileSize.value = `${sizeStr} (${file.type || 'Document'})`;
+
+        statusBadge.innerText = `Loading ${file.name}...`;
+        statusBadge.style.display = 'inline-block';
+        statusBadge.className = 'badge bg-warning text-dark';
+
+        const reader = new FileReader();
+        if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.md') || file.name.endsWith('.json')) {
+            reader.onload = function(e) {
+                docContent.value = e.target.result;
+                statusBadge.innerText = `✅ Loaded ${sizeStr}`;
+                statusBadge.className = 'badge bg-success';
+            };
+            reader.readAsText(file);
+        } else {
+            reader.onload = function(e) {
+                docContent.value = e.target.result;
+                statusBadge.innerText = `✅ Encrypted Payload Ready (${sizeStr})`;
+                statusBadge.className = 'badge bg-success';
+            };
+            reader.readAsDataURL(file);
         }
     }
 </script>

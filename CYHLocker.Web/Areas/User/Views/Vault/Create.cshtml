@@ -150,17 +150,29 @@
                  ───────────────────────────────────────────────────────────── -->
             <div id="sectionDocument" class="type-section" style="@(selectedType == "Document" ? "" : "display:none;")">
                 <div class="row g-3 mb-3">
+                    <div class="col-12">
+                        <div class="p-3 rounded-3" style="background:rgba(6,182,212,0.06); border:1px dashed rgba(6,182,212,0.35);">
+                            <label class="form-label text-light fw-semibold small d-flex justify-content-between align-items-center mb-2">
+                                <span>📎 Upload File to Encrypt (PDF, Image, Doc, Text)</span>
+                                <span class="badge bg-info text-dark" id="fileStatusBadge" style="display:none;">Ready</span>
+                            </label>
+                            <input type="file" id="filePickerInput" class="form-control auth-input" onchange="onFileSelected(this)" />
+                            <span class="small text-muted mt-1 d-block" style="font-size:0.75rem;">
+                                Selecting a file will read & encrypt its payload with AES-256-GCM. You can download and decrypt the original file anytime.
+                            </span>
+                        </div>
+                    </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label text-light fw-semibold small">Document / File Name</label>
-                        <input asp-for="DocFileName" class="form-control auth-input" placeholder="e.g. lease_agreement_2026.pdf" />
+                        <input asp-for="DocFileName" id="DocFileName" class="form-control auth-input" placeholder="e.g. lease_agreement_2026.pdf" />
                     </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label text-light fw-semibold small">File Size / Format</label>
-                        <input asp-for="DocFileSize" class="form-control auth-input" placeholder="e.g. 1.8 MB (PDF) or Confidential Notes" />
+                        <input asp-for="DocFileSize" id="DocFileSize" class="form-control auth-input" placeholder="e.g. 1.8 MB (PDF) or Confidential Notes" />
                     </div>
                     <div class="col-12">
                         <label class="form-label text-light fw-semibold small">Encrypted Document Body / Markdown Notes</label>
-                        <textarea asp-for="DocContent" rows="6" class="form-control auth-input font-monospace" placeholder="Paste your confidential document text, passport details, medical records, or recovery backup keys here..."></textarea>
+                        <textarea asp-for="DocContent" id="DocContent" rows="6" class="form-control auth-input font-monospace" placeholder="Paste your confidential document text, passport details, medical records, or recovery backup keys here..."></textarea>
                     </div>
                 </div>
             </div>
@@ -412,6 +424,49 @@
         passInput.type = 'text';
         checkStrength(generated);
         if (genModalInstance) genModalInstance.hide();
+    }
+
+    // Document File Upload Handler
+    function onFileSelected(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const docFileName = document.getElementById('DocFileName');
+        const docFileSize = document.getElementById('DocFileSize');
+        const docContent = document.getElementById('DocContent');
+        const titleInput = document.getElementById('titleInput');
+        const statusBadge = document.getElementById('fileStatusBadge');
+
+        docFileName.value = file.name;
+        if (!titleInput.value) {
+            titleInput.value = file.name.replace(/\.[^/.]+$/, "");
+        }
+
+        const sizeStr = file.size > 1024 * 1024 
+            ? (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+            : (file.size / 1024).toFixed(1) + ' KB';
+        docFileSize.value = `${sizeStr} (${file.type || 'Document'})`;
+
+        statusBadge.innerText = `Loading ${file.name}...`;
+        statusBadge.style.display = 'inline-block';
+        statusBadge.className = 'badge bg-warning text-dark';
+
+        const reader = new FileReader();
+        if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.md') || file.name.endsWith('.json')) {
+            reader.onload = function(e) {
+                docContent.value = e.target.result;
+                statusBadge.innerText = `✅ Loaded ${sizeStr}`;
+                statusBadge.className = 'badge bg-success';
+            };
+            reader.readAsText(file);
+        } else {
+            reader.onload = function(e) {
+                docContent.value = e.target.result;
+                statusBadge.innerText = `✅ Encrypted Payload Ready (${sizeStr})`;
+                statusBadge.className = 'badge bg-success';
+            };
+            reader.readAsDataURL(file);
+        }
     }
 </script>
 }

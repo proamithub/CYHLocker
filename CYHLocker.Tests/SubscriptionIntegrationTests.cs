@@ -48,6 +48,11 @@ public class SubscriptionIntegrationTests
             await con.OpenAsync();
             await using var cmd = new SqlCommand("SELECT TOP 1 Id FROM Users_CYH WHERE NormalizedEmail = 'USER@CYHLOCKER.COM'", con);
             userId = (await cmd.ExecuteScalarAsync())?.ToString() ?? throw new Exception("User not found");
+
+            // Reset subscription to ensure idempotent test
+            await using var cleanCmd = new SqlCommand("DELETE FROM UserSubscriptions_CYH WHERE UserId = @Uid", con);
+            cleanCmd.Parameters.AddWithValue("@Uid", userId);
+            await cleanCmd.ExecuteNonQueryAsync();
         }
 
         var userSub = await repo.GetUserSubscriptionAsync(userId);
