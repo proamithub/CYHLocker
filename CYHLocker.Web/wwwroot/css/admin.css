@@ -9,11 +9,11 @@
     --admin-sidebar:   #0d1226;
     --admin-topbar:    #0d1226;
     --admin-panel:     #111827;
-    --admin-border:    rgba(220, 38, 38, 0.18);
+    --admin-border:    rgba(220, 38, 38, 0.22);
     --admin-accent:    #dc2626;
     --admin-accent2:   #ef4444;
-    --admin-text:      #e5e7eb;
-    --admin-muted:     #6b7280;
+    --admin-text:      #f8fafc;
+    --admin-muted:     #94a3b8;
     --admin-sidebar-w: 240px;
 }
 
@@ -32,6 +32,99 @@ html, body {
 }
 
 a { text-decoration: none; color: inherit; }
+
+/* ============================================================
+   GLOBAL HIGH-CONTRAST & TEXT VISIBILITY ENGINE (ADMIN AREA)
+   ============================================================ */
+.text-muted {
+    color: #94a3b8 !important;
+}
+
+.text-secondary {
+    color: #cbd5e1 !important;
+}
+
+.text-light {
+    color: #f8fafc !important;
+}
+
+label, .form-label, .admin-label {
+    color: #e2e8f0 !important;
+    font-weight: 500;
+}
+
+/* Crisp Input & Select Controls on Dark Admin Background */
+.form-control,
+.form-select,
+.auth-input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="url"],
+textarea {
+    background-color: rgba(17, 24, 39, 0.9) !important;
+    border: 1px solid rgba(220, 38, 38, 0.28) !important;
+    color: #f8fafc !important;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus,
+.auth-input:focus,
+input:focus,
+textarea:focus {
+    background-color: rgba(17, 24, 39, 1) !important;
+    border-color: #ef4444 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.22) !important;
+    outline: none;
+}
+
+::placeholder,
+.form-control::placeholder,
+.auth-input::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+}
+
+select.form-select option {
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+    padding: 8px 12px;
+}
+
+/* Admin Table Cells */
+.table {
+    color: #f8fafc !important;
+}
+
+.table th {
+    color: #94a3b8 !important;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(220, 38, 38, 0.25) !important;
+}
+
+.table td {
+    color: #f8fafc !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Secondary Buttons */
+.btn-outline-secondary {
+    color: #cbd5e1 !important;
+    border-color: rgba(203, 213, 225, 0.3) !important;
+}
+
+.btn-outline-secondary:hover {
+    background: rgba(203, 213, 225, 0.15) !important;
+    border-color: #cbd5e1 !important;
+    color: #ffffff !important;
+}
+
 
 /* ============================================================
    ADMIN SHELL — Sidebar + Main layout
@@ -113,7 +206,7 @@ a { text-decoration: none; color: inherit; }
     gap: 10px;
     padding: 10px 12px;
     border-radius: 10px;
-    color: #9ca3af;
+    color: #cbd5e1;
     font-size: 0.88rem;
     font-weight: 500;
     transition: all 0.2s ease;

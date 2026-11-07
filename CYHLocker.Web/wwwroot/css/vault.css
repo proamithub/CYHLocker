@@ -60,7 +60,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #64748b;
+    color: #94a3b8;
     margin-bottom: 0.4rem;
     padding-left: 0.75rem;
 }
@@ -170,8 +170,13 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: 1rem;
-    color: #64748b;
+    color: #94a3b8;
     pointer-events: none;
+}
+
+.vault-search-box input::placeholder {
+    color: #94a3b8 !important;
+    opacity: 0.9 !important;
 }
 
 .vault-search-box input {
@@ -374,7 +379,7 @@
 .vault-star-btn {
     background: transparent;
     border: none;
-    color: #64748b;
+    color: #94a3b8;
     font-size: 1.15rem;
     cursor: pointer;
     transition: all 0.2s;
@@ -416,7 +421,7 @@
 .drawer-empty-state {
     text-align: center;
     padding: 4rem 1rem;
-    color: #64748b;
+    color: #94a3b8;
 }
 
 .drawer-field-card {
@@ -433,7 +438,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #64748b;
+    color: #94a3b8;
     margin-bottom: 0.25rem;
 }
 
