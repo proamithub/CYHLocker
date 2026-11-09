@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:CYHLocker.Mobile.App.ViewModels"
+             xmlns:models="clr-namespace:CYHLocker.Mobile.App.Models"
+             x:Class="CYHLocker.Mobile.App.Views.SettingsPage"
+             x:DataType="vm:SmsSettingsViewModel"
+             Title="SIM &amp; Settings"
+             BackgroundColor="{AppThemeBinding Light=#F4F6F9, Dark=#12141A}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <!-- SIM & Hardware Status Card -->
+            <Border Padding="16"
+                    StrokeShape="RoundRectangle 16"
+                    StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="SIM Card Status"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#111827, Dark=#FFFFFF}" />
+
+                    <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding SimCards}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:SimCardInfo">
+                                <Border Padding="12"
+                                        StrokeShape="RoundRectangle 10"
+                                        StrokeThickness="1"
+                                        Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}"
+                                        BackgroundColor="{AppThemeBinding Light=#F9FAFB, Dark=#111827}">
+                                    <Grid ColumnDefinitions="Auto, *">
+                                        <Label Grid.Column="0"
+                                               Text="📶"
+                                               FontSize="20"
+                                               VerticalOptions="Center"
+                                               Margin="0,0,10,0" />
+                                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                            <Label Text="{Binding DisplayName}"
+                                                   FontSize="14"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light=#111827, Dark=#F9FAFB}" />
+                                            <Label Text="{Binding CarrierName}"
+                                                   FontSize="12"
+                                                   TextColor="{AppThemeBinding Light=#6B7280, Dark=#9CA3AF}" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Permissions Card -->
+            <Border Padding="16"
+                    StrokeShape="RoundRectangle 16"
+                    StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Android Permissions"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#111827, Dark=#FFFFFF}" />
+
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Grid.Column="0"
+                               Text="SMS Send &amp; Receive Permission:"
+                               FontSize="13"
+                               VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light=#374151, Dark=#D1D5DB}" />
+                        <Label Grid.Column="1"
+                               Text="{Binding PermissionStatusText}"
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               VerticalOptions="Center"
+                               TextColor="{Binding HasPermission, Converter={StaticResource PermissionColorConverter}, FallbackValue=#10B981}" />
+                    </Grid>
+
+                    <Button Text="SMS Permissions Grant Karein"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            HeightRequest="42"
+                            CornerRadius="10"
+                            BackgroundColor="#2563EB"
+                            TextColor="White"
+                            Command="{Binding RequestPermissionCommand}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Statistics Card -->
+            <Border Padding="16"
+                    StrokeShape="RoundRectangle 16"
+                    StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="SMS Activity Stats"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#111827, Dark=#FFFFFF}" />
+
+                    <Grid ColumnDefinitions="*, *, *" ColumnSpacing="8">
+                        <Border Grid.Column="0"
+                                Padding="10"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 10"
+                                BackgroundColor="{AppThemeBinding Light=#EEF2FF, Dark=#1E1B4B}">
+                            <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
+                                <Label Text="{Binding TotalSent}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#4F46E5"
+                                       HorizontalOptions="Center" />
+                                <Label Text="Sent"
+                                       FontSize="11"
+                                       TextColor="{AppThemeBinding Light=#6B7280, Dark=#A5B4FC}"
+                                       HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <Border Grid.Column="1"
+                                Padding="10"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 10"
+                                BackgroundColor="{AppThemeBinding Light=#ECFDF5, Dark=#064E3B}">
+                            <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
+                                <Label Text="{Binding TotalReceived}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#059669"
+                                       HorizontalOptions="Center" />
+                                <Label Text="Received"
+                                       FontSize="11"
+                                       TextColor="{AppThemeBinding Light=#6B7280, Dark=#6EE7B7}"
+                                       HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <Border Grid.Column="2"
+                                Padding="10"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 10"
+                                BackgroundColor="{AppThemeBinding Light=#F3F4F6, Dark=#374151}">
+                            <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
+                                <Label Text="{Binding TotalConversations}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light=#111827, Dark=#F9FAFB}"
+                                       HorizontalOptions="Center" />
+                                <Label Text="Chats"
+                                       FontSize="11"
+                                       TextColor="{AppThemeBinding Light=#6B7280, Dark=#9CA3AF}"
+                                       HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Quick Templates Management -->
+            <Border Padding="16"
+                    StrokeShape="RoundRectangle 16"
+                    StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}">
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Grid.Column="0"
+                               Text="Custom Quick Templates"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light=#111827, Dark=#FFFFFF}" />
+                        <Button Grid.Column="1"
+                                Text="+ Add"
+                                FontSize="12"
+                                HeightRequest="32"
+                                Padding="10,0"
+                                CornerRadius="8"
+                                BackgroundColor="#512BD4"
+                                TextColor="White"
+                                Command="{Binding AddTemplateCommand}" />
+                    </Grid>
+
+                    <VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Templates}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:SmsQuickTemplate">
+                                <Border Padding="10"
+                                        StrokeShape="RoundRectangle 8"
+                                        StrokeThickness="1"
+                                        Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#374151}"
+                                        BackgroundColor="{AppThemeBinding Light=#F9FAFB, Dark=#111827}">
+                                    <Label Text="{Binding Text}"
+                                           FontSize="13"
+                                           TextColor="{AppThemeBinding Light=#374151, Dark=#D1D5DB}" />
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

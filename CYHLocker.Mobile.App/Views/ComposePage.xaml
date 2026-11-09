@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:CYHLocker.Mobile.App.ViewModels"
+             xmlns:models="clr-namespace:CYHLocker.Mobile.App.Models"
+             x:Class="CYHLocker.Mobile.App.Views.ComposePage"
+             x:DataType="vm:ComposeViewModel"
+             Title="Compose"
+             BackgroundColor="{AppThemeBinding Light=#F4F6F9, Dark=#12141A}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <!-- Header Card -->
+            <Border Padding="16"
+                    StrokeShape="RoundRectangle 16"
+                    StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Direct SIM SMS Compose"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#111827, Dark=#FFFFFF}" />
+                    <Label Text="Local SIM card ke dwara offline direct text message bhejein."
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#6B7280, Dark=#9CA3AF}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Recipient Number -->
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Mobile / Phone Number *"
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#374151, Dark=#D1D5DB}" />
+                <Border Padding="12,0"
+                        StrokeShape="RoundRectangle 12"
+                        StrokeThickness="1"
+                        Stroke="{AppThemeBinding Light=#D1D5DB, Dark=#374151}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}"
+                        HeightRequest="48">
+                    <Entry Placeholder="e.g. +91 98765 43210"
+                           Keyboard="Telephone"
+                           PlaceholderColor="{AppThemeBinding Light=#9CA3AF, Dark=#6B7280}"
+                           TextColor="{AppThemeBinding Light=#111827, Dark=#F9FAFB}"
+                           Text="{Binding Recipient, Mode=TwoWay}"
+                           VerticalOptions="Center" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Recipient Name (Optional) -->
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Contact Name (Optional)"
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#374151, Dark=#D1D5DB}" />
+                <Border Padding="12,0"
+                        StrokeShape="RoundRectangle 12"
+                        StrokeThickness="1"
+                        Stroke="{AppThemeBinding Light=#D1D5DB, Dark=#374151}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}"
+                        HeightRequest="48">
+                    <Entry Placeholder="e.g. Rahul Sharma"
+                           PlaceholderColor="{AppThemeBinding Light=#9CA3AF, Dark=#6B7280}"
+                           TextColor="{AppThemeBinding Light=#111827, Dark=#F9FAFB}"
+                           Text="{Binding RecipientName, Mode=TwoWay}"
+                           VerticalOptions="Center" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Quick Template Responses -->
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Quick Templates"
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#374151, Dark=#D1D5DB}" />
+                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                    <HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Templates}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:SmsQuickTemplate">
+                                <Border Padding="10,6"
+                                        StrokeShape="RoundRectangle 12"
+                                        StrokeThickness="1"
+                                        Stroke="{AppThemeBinding Light=#CBD5E1, Dark=#374151}"
+                                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ComposeViewModel}}, Path=TemplateSelectedCommand}"
+                                                              CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <Label Text="{Binding Text}"
+                                           FontSize="12"
+                                           TextColor="{AppThemeBinding Light=#4B5563, Dark=#E2E8F0}"
+                                           MaxLines="1" />
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </HorizontalStackLayout>
+                </ScrollView>
+            </VerticalStackLayout>
+
+            <!-- Message Text -->
+            <VerticalStackLayout Spacing="6">
+                <Grid ColumnDefinitions="*, Auto">
+                    <Label Grid.Column="0"
+                           Text="SMS Text Message *"
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#374151, Dark=#D1D5DB}" />
+                    <Label Grid.Column="1"
+                           Text="{Binding CounterText}"
+                           FontSize="11"
+                           TextColor="{AppThemeBinding Light=#6B7280, Dark=#9CA3AF}" />
+                </Grid>
+                <Border Padding="12"
+                        StrokeShape="RoundRectangle 12"
+                        StrokeThickness="1"
+                        Stroke="{AppThemeBinding Light=#D1D5DB, Dark=#374151}"
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}"
+                        HeightRequest="120">
+                    <Editor Placeholder="Apna message yahan type karein..."
+                            PlaceholderColor="{AppThemeBinding Light=#9CA3AF, Dark=#6B7280}"
+                            TextColor="{AppThemeBinding Light=#111827, Dark=#F9FAFB}"
+                            Text="{Binding MessageText, Mode=TwoWay}"
+                            AutoSize="Disabled" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Send Action Button -->
+            <Button Text="Direct SMS Bhejein (SIM 1) ➤"
+                    FontSize="16"
+                    FontAttributes="Bold"
+                    HeightRequest="52"
+                    CornerRadius="14"
+                    BackgroundColor="#512BD4"
+                    TextColor="White"
+                    Command="{Binding SendCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

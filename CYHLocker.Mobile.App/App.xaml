@@ -1,0 +1,22 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:CYHLocker.Mobile.App.Converters"
+             xmlns:local="clr-namespace:CYHLocker.Mobile.App"
+             x:Class="CYHLocker.Mobile.App.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:IsIncomingToLayoutAlignmentConverter x:Key="IsIncomingToLayoutAlignmentConverter" />
+            <converters:IsIncomingToBubbleColorConverter x:Key="IsIncomingToBubbleColorConverter" />
+            <converters:StringIsNotNullOrEmptyConverter x:Key="StringIsNotNullOrEmptyConverter" />
+            <converters:IntGreaterThanZeroConverter x:Key="IntGreaterThanZeroConverter" />
+            <converters:PermissionColorConverter x:Key="PermissionColorConverter" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

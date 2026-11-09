@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:CYHLocker.Mobile.App.ViewModels"
+             xmlns:models="clr-namespace:CYHLocker.Mobile.App.Models"
+             x:Class="CYHLocker.Mobile.App.Views.ChatPage"
+             x:DataType="vm:ChatViewModel"
+             Shell.TabBarIsVisible="False"
+             BackgroundColor="{AppThemeBinding Light=#F4F6F9, Dark=#12141A}">
+
+    <Grid RowDefinitions="Auto, *, Auto, Auto">
+        <!-- Chat Header -->
+        <Border Grid.Row="0"
+                Padding="16,12"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}"
+                StrokeThickness="0">
+            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                <Button Grid.Column="0"
+                        Text="←"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0"
+                        CornerRadius="18"
+                        BackgroundColor="{AppThemeBinding Light=#F3F4F6, Dark=#2D3343}"
+                        TextColor="{AppThemeBinding Light=#111827, Dark=#FFFFFF}"
+                        Clicked="OnBackClicked" />
+
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                    <Label Text="{Binding Title}"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#111827, Dark=#FFFFFF}"
+                           LineBreakMode="TailTruncation" />
+                    <Label Text="{Binding ContactNumber}"
+                           FontSize="11"
+                           TextColor="{AppThemeBinding Light=#6B7280, Dark=#9CA3AF}" />
+                </VerticalStackLayout>
+
+                <!-- SIM Indicator Badge -->
+                <Border Grid.Column="2"
+                        Padding="8,4"
+                        StrokeShape="RoundRectangle 8"
+                        StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#EEF2FF, Dark=#312E81}"
+                        VerticalOptions="Center">
+                    <Label Text="SIM Direct"
+                           FontSize="11"
+                           FontAttributes="Bold"
+                           TextColor="#6366F1" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Messages Bubble List -->
+        <CollectionView Grid.Row="1"
+                        x:Name="MessagesList"
+                        ItemsSource="{Binding Messages}"
+                        SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:SmsMessageItem">
+                    <Grid Padding="16,2">
+                        <!-- Left-aligned for Incoming, Right-aligned for Outgoing -->
+                        <Border HorizontalOptions="{Binding IsIncoming, Converter={StaticResource IsIncomingToLayoutAlignmentConverter}}"
+                                MaximumWidthRequest="280"
+                                Padding="12,10"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 16"
+                                BackgroundColor="{Binding IsIncoming, Converter={StaticResource IsIncomingToBubbleColorConverter}}">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="{Binding Body}"
+                                       FontSize="14"
+                                       TextColor="White"
+                                       LineBreakMode="WordWrap" />
+                                <HorizontalStackLayout Spacing="6" HorizontalOptions="End">
+                                    <Label Text="{Binding FormattedTime}"
+                                           FontSize="10"
+                                           TextColor="#D1D5DB" />
+                                    <Label Text="{Binding StatusText}"
+                                           FontSize="10"
+                                           TextColor="#93C5FD"
+                                           IsVisible="{Binding IsIncoming, Converter={StaticResource InverseBoolConverter}}" />
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Quick Templates Carousel -->
+        <ScrollView Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalScrollBarVisibility="Never"
+                    Padding="12,6"
+                    BackgroundColor="{AppThemeBinding Light=#EBF0F7, Dark=#181B23}">
+            <HorizontalStackLayout Spacing="8"
+                                   BindableLayout.ItemsSource="{Binding Templates}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="models:SmsQuickTemplate">
+                        <Border Padding="10,6"
+                                StrokeShape="RoundRectangle 14"
+                                StrokeThickness="1"
+                                Stroke="{AppThemeBinding Light=#CBD5E1, Dark=#374151}"
+                                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F2937}">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ChatViewModel}}, Path=TemplateSelectedCommand}"
+                                                      CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <Label Text="{Binding Text}"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light=#334155, Dark=#E2E8F0}"
+                                   MaxLines="1" />
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- Message Compose Box & Live Segment Counter -->
+        <Border Grid.Row="3"
+                Padding="12,8"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E212B}"
+                StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#E5E7EB, Dark=#2D3343}">
+            <VerticalStackLayout Spacing="6">
+                <!-- Counter & SIM info -->
+                <Grid ColumnDefinitions="*, Auto">
+                    <Label Grid.Column="0"
+                           Text="{Binding CounterText}"
+                           FontSize="10"
+                           TextColor="{AppThemeBinding Light=#6B7280, Dark=#9CA3AF}" />
+                    <Label Grid.Column="1"
+                           Text="SIM 1"
+                           FontSize="10"
+                           FontAttributes="Bold"
+                           TextColor="#10B981" />
+                </Grid>
+
+                <!-- Input Row -->
+                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                    <Border Grid.Column="0"
+                            Padding="10,0"
+                            StrokeShape="RoundRectangle 20"
+                            StrokeThickness="1"
+                            Stroke="{AppThemeBinding Light=#D1D5DB, Dark=#374151}"
+                            BackgroundColor="{AppThemeBinding Light=#F9FAFB, Dark=#111827}">
+                        <Entry Placeholder="Type local SMS message..."
+                               PlaceholderColor="{AppThemeBinding Light=#9CA3AF, Dark=#6B7280}"
+                               TextColor="{AppThemeBinding Light=#111827, Dark=#F9FAFB}"
+                               Text="{Binding MessageText, Mode=TwoWay}"
+                               VerticalOptions="Center" />
+                    </Border>
+
+                    <!-- Send Button -->
+                    <Button Grid.Column="1"
+                            Text="➤"
+                            FontSize="18"
+                            WidthRequest="42"
+                            HeightRequest="42"
+                            Padding="0"
+                            CornerRadius="21"
+                            BackgroundColor="#512BD4"
+                            TextColor="White"
+                            Command="{Binding SendCommand}" />
+                </Grid>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>
