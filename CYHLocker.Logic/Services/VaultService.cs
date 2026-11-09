@@ -140,6 +140,9 @@ public class VaultService : IVaultService
     public Task<string> CreateCategoryAsync(string userId, CreateCategoryRequestDto request) =>
         _vaultRepo.InsertCategoryAsync(userId, request.Name, request.Icon, request.Color);
 
+    public Task<bool> UpdateCategoryAsync(string userId, string categoryId, string name, string? icon, string? color) =>
+        _vaultRepo.UpdateCategoryAsync(userId, categoryId, name, icon, color);
+
     public Task<bool> DeleteCategoryAsync(string userId, string categoryId) =>
         _vaultRepo.DeleteCategoryAsync(userId, categoryId);
 

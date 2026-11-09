@@ -1,4 +1,5 @@
 @model List<CYHLocker.Data.DTOs.VaultItemDto>
+@inject Microsoft.Extensions.Configuration.IConfiguration AppConfig
 @{
     ViewData["Title"] = "Encrypted Digital Vault";
     var categories = ViewBag.Categories as List<CYHLocker.Data.DTOs.VaultCategoryDto> ?? new();
@@ -7,6 +8,42 @@
     var searchQuery = ViewBag.SearchQuery as string;
     var selectedType = ViewBag.SelectedType as string ?? "All";
     var favoritesOnly = ViewBag.FavoritesOnly == true;
+    var currentSelectedCategory = categories.FirstOrDefault(c => c.Id == selectedCat);
+
+    // One-time auto-expansion: Ensure [Icon] column in SQL table can store custom image data URLs
+    try
+    {
+        var connStr = AppConfig.GetConnectionString("DefaultConnection");
+        if (!string.IsNullOrEmpty(connStr))
+        {
+            using var dbCon = new Microsoft.Data.SqlClient.SqlConnection(connStr);
+            dbCon.Open();
+            using var alterCmd = new Microsoft.Data.SqlClient.SqlCommand(@"
+                IF EXISTS (
+                    SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME = 'VaultCategories_CYH' 
+                      AND COLUMN_NAME = 'Icon' 
+                      AND (CHARACTER_MAXIMUM_LENGTH < 500 AND CHARACTER_MAXIMUM_LENGTH > 0)
+                )
+                BEGIN
+                    DECLARE @ConstraintName NVARCHAR(200);
+                    SELECT @ConstraintName = d.name
+                    FROM sys.default_constraints d
+                    JOIN sys.columns c ON d.parent_object_id = c.object_id AND d.parent_column_id = c.column_id
+                    WHERE d.parent_object_id = OBJECT_ID(N'[dbo].[VaultCategories_CYH]') AND c.name = 'Icon';
+
+                    IF @ConstraintName IS NOT NULL
+                    BEGIN
+                        EXEC('ALTER TABLE [dbo].[VaultCategories_CYH] DROP CONSTRAINT [' + @ConstraintName + ']');
+                    END;
+
+                    ALTER TABLE [dbo].[VaultCategories_CYH] ALTER COLUMN [Icon] NVARCHAR(MAX) NULL;
+                    ALTER TABLE [dbo].[VaultCategories_CYH] ADD DEFAULT ('📁') FOR [Icon];
+                END", dbCon);
+            alterCmd.ExecuteNonQuery();
+        }
+    }
+    catch { }
 }
 
 <!-- ==========================================================================
@@ -131,15 +168,31 @@
         <ul class="vault-nav-list">
             @foreach (var cat in categories)
             {
-                <li>
-                    <a class="vault-nav-link @(selectedCat == cat.Id ? "active" : "")"
-                       asp-area="User" asp-controller="Vault" asp-action="Index" asp-route-categoryId="@cat.Id">
+                var isSelected = selectedCat == cat.Id;
+                var cColor = !string.IsNullOrEmpty(cat.Color) ? cat.Color : "#06b6d4";
+                <li class="vault-nav-item-wrapper d-flex align-items-center position-relative mb-1">
+                    <a class="vault-nav-link flex-grow-1 @(isSelected ? "active" : "")"
+                       asp-area="User" asp-controller="Vault" asp-action="Index" asp-route-categoryId="@cat.Id"
+                       style="border-left: 3.5px solid @cColor; @(isSelected ? $"background: linear-gradient(90deg, {cColor}2b 0%, rgba(15,23,42,0.5) 100%); box-shadow: inset 0 0 12px {cColor}22;" : "")">
                         <span class="vault-nav-link-left">
-                            <span class="vault-nav-link-icon">@cat.Icon</span>
-                            <span class="text-truncate" style="max-width:130px;">@cat.Name</span>
+                            @if (!string.IsNullOrEmpty(cat.Icon) && (cat.Icon.StartsWith("http") || cat.Icon.StartsWith("/uploads/") || cat.Icon.StartsWith("data:image")))
+                            {
+                                <img src="@cat.Icon" alt="@cat.Name" style="width:20px; height:20px; object-fit:cover; border-radius:4px; margin-right:8px; display:inline-block; border:1px solid @(cColor)66;" />
+                            }
+                            else
+                            {
+                                <span class="vault-nav-link-icon" style="margin-right:6px; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:4px; background:@(cColor)1f;">@cat.Icon</span>
+                            }
+                            <span class="text-truncate" style="max-width:115px; color:@(isSelected ? "#fff" : "#e2e8f0"); font-weight:@(isSelected ? "600" : "500");">@cat.Name</span>
                         </span>
-                        <span class="vault-nav-badge">@cat.TotalItems</span>
+                        <span class="vault-nav-badge" style="background:@(cColor)22; color:@cColor; border:1px solid @(cColor)44; font-weight:600;">@cat.TotalItems</span>
                     </a>
+                    <button type="button" class="vault-cat-edit-trigger text-muted" 
+                            data-cat-id="@cat.Id"
+                            onclick="event.preventDefault(); event.stopPropagation(); openEditCategoryFromTrigger(this)" 
+                            title="Edit folder icon & name" style="font-size:0.75rem; margin-right:4px;">
+                        ✏️
+                    </button>
                 </li>
             }
         </ul>
@@ -188,13 +241,48 @@
         <!-- Section Title & Item Count Header -->
         <div class="d-flex align-items-center justify-content-between px-2">
             <div>
-                <h4 class="text-light fw-bold mb-0">
-                    @(selectedType == "All" ? "All Vault Items" : selectedType == "Card" ? "Payment Cards" : selectedType == "Document" ? "Secure Documents" : selectedType == "ApiKey" ? "Developer API Keys" : "Logins & Credentials")
-                </h4>
-                <span class="text-muted small">Showing @Model.Count item(s) protected by AES-256-GCM</span>
+                @if (!string.IsNullOrEmpty(selectedCat) && currentSelectedCategory != null)
+                {
+                    var activeCol = !string.IsNullOrEmpty(currentSelectedCategory.Color) ? currentSelectedCategory.Color : "#06b6d4";
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width:42px; height:42px; min-width:42px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:@(activeCol)26; border:1.5px solid @(activeCol)66; box-shadow:0 0 15px @(activeCol)33;">
+                            @if (!string.IsNullOrEmpty(currentSelectedCategory.Icon) && (currentSelectedCategory.Icon.StartsWith("http") || currentSelectedCategory.Icon.StartsWith("/uploads/") || currentSelectedCategory.Icon.StartsWith("data:image")))
+                            {
+                                <img src="@currentSelectedCategory.Icon" alt="@currentSelectedCategory.Name" style="width:32px; height:32px; object-fit:cover; border-radius:6px; display:inline-block;" />
+                            }
+                            else
+                            {
+                                <span style="font-size:1.6rem; line-height:1;">@currentSelectedCategory.Icon</span>
+                            }
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <h4 class="text-light fw-bold mb-0">@currentSelectedCategory.Name</h4>
+                                <span class="badge" style="background:@(activeCol)22; color:@activeCol; border:1px solid @(activeCol)55; font-size:0.72rem; padding:3px 8px; border-radius:6px;">
+                                    <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:@activeCol; margin-right:4px; box-shadow:0 0 6px @activeCol;"></span>Folder Accent
+                                </span>
+                                <button type="button" class="btn btn-sm py-0 px-2 rounded-pill ms-1"
+                                        style="border:1px solid @(activeCol)88; color:@activeCol; background:@(activeCol)15; font-size:0.75rem;"
+                                        data-cat-id="@currentSelectedCategory.Id"
+                                        onclick="openEditCategoryFromTrigger(this)"
+                                        title="Change folder icon, name or color">
+                                    ✏️ Edit Folder
+                                </button>
+                            </div>
+                            <span class="text-muted small">Folder filtered • Showing @Model.Count item(s)</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <h4 class="text-light fw-bold mb-0">
+                        @(selectedType == "All" ? "All Vault Items" : selectedType == "Card" ? "Payment Cards" : selectedType == "Document" ? "Secure Documents" : selectedType == "ApiKey" ? "Developer API Keys" : "Logins & Credentials")
+                    </h4>
+                    <span class="text-muted small">Showing @Model.Count item(s) protected by AES-256-GCM</span>
+                }
             </div>
             <div class="d-flex gap-2">
-                <a asp-area="User" asp-controller="Vault" asp-action="Create" asp-route-type="@(selectedType == "All" ? "Login" : selectedType)" class="btn btn-sm btn-glow">
+                <a asp-area="User" asp-controller="Vault" asp-action="Create" asp-route-type="@(selectedType == "All" ? "Login" : selectedType)" asp-route-categoryId="@selectedCat" class="btn btn-sm btn-glow">
                     ➕ Add @(selectedType == "All" ? "Item" : selectedType)
                 </a>
             </div>
@@ -253,8 +341,12 @@
                             </span>
                             @if (!string.IsNullOrEmpty(item.CategoryName))
                             {
-                                <span class="badge" style="background:rgba(6,182,212,0.15); color:#67e8f9; font-size:0.7rem; border-radius:6px;">
-                                    @item.CategoryName
+                                var itemCat = categories.FirstOrDefault(c => c.Id == item.CategoryId);
+                                var cardCatCol = !string.IsNullOrEmpty(item.CategoryColor) 
+                                    ? item.CategoryColor 
+                                    : (!string.IsNullOrEmpty(itemCat?.Color) ? itemCat.Color : "#06b6d4");
+                                <span class="badge" style="background:@(cardCatCol)22; color:@cardCatCol; border:1px solid @(cardCatCol)55; font-size:0.72rem; border-radius:6px; font-weight:500;">
+                                    📁 @item.CategoryName
                                 </span>
                             }
                             @if (item.ItemType == "Login" && !string.IsNullOrEmpty(item.PasswordStrength))
@@ -387,37 +479,393 @@
 <div class="vault-drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
 
 <!-- ==========================================================================
-     NEW CATEGORY MODAL
+     NEW CATEGORY MODAL (WITH INTERACTIVE FOLDER ICON SELECTOR)
      ========================================================================== -->
 <div class="modal fade" id="newCategoryModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content glass-card" style="background:#0f172a; border-color:rgba(6,182,212,0.3); color:#fff;">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title fw-bold">📁 Create New Folder / Category</h5>
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:560px; max-height:90vh; margin:1.5rem auto;">
+        <div class="modal-content glass-card" style="background:#0b1120; border-color:rgba(6,182,212,0.3); color:#fff; box-shadow: 0 25px 60px rgba(0,0,0,0.7); max-height:90vh; display:flex; flex-direction:column; overflow:hidden;">
+            <div class="modal-header border-bottom border-secondary py-3 px-4 flex-shrink-0" style="background:rgba(15,23,42,0.98);">
+                <div class="d-flex align-items-center gap-2">
+                    <span id="modalTitleIcon" style="font-size:1.4rem;">📁</span>
+                    <h5 class="modal-title fw-bold m-0 text-light">Create New Folder / Category</h5>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" asp-area="User" asp-controller="Vault" asp-action="CreateCategory">
+            <form method="post" asp-area="User" asp-controller="Vault" asp-action="CreateCategory" style="display:flex; flex-direction:column; flex:1 1 auto; overflow:hidden; min-height:0; margin:0;">
                 @Html.AntiForgeryToken()
-                <div class="modal-body">
+                <div class="modal-body px-4 py-3" style="overflow-y:auto; flex:1 1 auto; min-height:0;">
+
+                    <!-- Live Folder Preview Card -->
+                    <div class="p-3 mb-3 rounded-3 d-flex align-items-center gap-3" 
+                         id="catLivePreviewCard"
+                         style="background:rgba(255,255,255,0.03); border:1px solid rgba(6,182,212,0.25); border-left:4px solid #06b6d4; transition:all 0.2s;">
+                        <div id="catPreviewIconBox" class="d-flex align-items-center justify-content-center" 
+                             style="width:52px; height:52px; min-width:52px; font-size:1.85rem; border-radius:12px; background:rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.4); box-shadow:0 0 15px rgba(6,182,212,0.25); transition:all 0.2s;">
+                            📁
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="fw-bold text-light text-truncate" id="catPreviewName" style="font-size:1.05rem;">
+                                New Folder
+                            </div>
+                            <div class="small text-secondary d-flex align-items-center gap-2">
+                                <span id="catPreviewBadge" class="badge" style="background:rgba(6,182,212,0.2); color:#67e8f9; font-size:0.7rem; font-weight:500;">Category</span>
+                                <span>• 0 items</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick 1-Click Templates -->
                     <div class="mb-3">
-                        <label class="form-label small text-muted">Folder Name</label>
-                        <input type="text" name="Name" class="form-control auth-input" placeholder="e.g. Work, Banking, Social Media" required />
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label small text-secondary mb-0" style="font-size:0.75rem;">⚡ Quick Presets</label>
+                            <span class="text-secondary" style="font-size:0.7rem;">Click to auto-fill</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-pill" style="font-size:0.78rem;" onclick="applyFolderTemplate('Work', '💼', '#3b82f6')">💼 Work</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-pill" style="font-size:0.78rem;" onclick="applyFolderTemplate('Banking', '🏦', '#10b981')">🏦 Banking</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-pill" style="font-size:0.78rem;" onclick="applyFolderTemplate('Security', '🔒', '#f59e0b')">🔒 Security</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-pill" style="font-size:0.78rem;" onclick="applyFolderTemplate('Social', '📱', '#ec4899')">📱 Social</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-pill" style="font-size:0.78rem;" onclick="applyFolderTemplate('Shopping', '🛒', '#8b5cf6')">🛒 Shopping</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-pill" style="font-size:0.78rem;" onclick="applyFolderTemplate('Personal', '🏠', '#06b6d4')">🏠 Personal</button>
+                        </div>
                     </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small text-muted">Emoji Icon</label>
-                            <input type="text" name="Icon" class="form-control auth-input" value="📁" />
+
+                    <!-- Folder Name Input -->
+                    <div class="mb-3">
+                        <label class="form-label small text-light fw-semibold">Folder Name <span class="text-danger">*</span></label>
+                        <input type="text" id="catNameInput" name="Name" class="form-control auth-input" placeholder="e.g. Work, Banking, Social Media" required oninput="updateFolderLivePreview()" />
+                    </div>
+
+                    <!-- Folder Icon Selector Section -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label small text-light fw-semibold mb-0">Choose Folder Icon</label>
+                            <span class="text-secondary small" style="font-size:0.75rem;">Selected: <strong id="selectedIconLabel" class="text-info fs-6">📁</strong></span>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small text-muted">Color Accent</label>
-                            <input type="color" name="Color" class="form-control form-control-color w-100" value="#06b6d4" style="height:42px; background:transparent; border-color:rgba(6,182,212,0.25);" />
+
+                        <!-- Current Icon Bar -->
+                        <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-2" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                            <input type="hidden" id="catIconInput" name="Icon" value="📁" />
+                            <div id="catCurrentIconDisplay" class="d-flex align-items-center justify-content-center overflow-hidden" 
+                                 style="width:46px; height:46px; min-width:46px; font-size:1.4rem; background:rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.4); border-radius:8px;">
+                                📁
+                            </div>
+                            <div class="flex-grow-1 small text-secondary" style="line-height:1.25; font-size:0.75rem;">
+                                Selected folder icon. Niche diye gaye custom image upload/crop, link ya presets se choose karein.
+                            </div>
                         </div>
+
+                        <!-- Custom Image Icon Upload & 1:1 Crop Section -->
+                        <div class="p-2 mb-2 rounded-2" style="background:rgba(6,182,212,0.06); border:1px solid rgba(6,182,212,0.25);">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="small fw-semibold text-info" style="font-size:0.75rem;">
+                                    🖼️ Custom Image Icon (Upload File ya Image Link)
+                                </span>
+                                <span class="text-secondary small" style="font-size:0.7rem;">Auto-crops to 1:1 icon</span>
+                            </div>
+                            
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <label class="btn btn-sm btn-outline-info d-flex align-items-center gap-1 py-1 px-3 m-0" style="cursor:pointer; font-size:0.78rem;">
+                                    <span>📁 Upload Image</span>
+                                    <input type="file" id="catImgFileInput" accept="image/*" class="d-none" onchange="handleImageFileSelected(this, 'create')" />
+                                </label>
+                                
+                                <div class="d-flex gap-1 flex-grow-1" style="min-width:190px;">
+                                    <input type="url" id="catImgUrlInput" placeholder="Paste image link (https://...)" class="form-control auth-input py-1 px-2" style="font-size:0.78rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();handleImageUrlLoad('create');}" />
+                                    <button type="button" class="btn btn-sm btn-outline-info py-1 px-2 text-nowrap" style="font-size:0.78rem;" onclick="handleImageUrlLoad('create')">
+                                        <span>🔗 Load</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Interactive 1:1 Square Cropper & Compressor Box -->
+                            <div id="createCropperBox" class="p-2 rounded-2 mt-2" style="display:none; background:#070d19; border:1px solid #06b6d4; box-shadow:0 0 15px rgba(6,182,212,0.25);">
+                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom border-secondary border-opacity-50">
+                                    <span class="small fw-bold text-info" style="font-size:0.75rem;">✂️ Crop, Adjust & Compress to Icon</span>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 text-decoration-none" onclick="cancelCropper('create')">✕</button>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    <!-- Viewport Canvas (User can drag/pan inside) -->
+                                    <div style="position:relative; width:130px; height:130px; min-width:130px; background:#000; border-radius:8px; overflow:hidden; border:2px dashed rgba(6,182,212,0.6); cursor:grab;" id="createCropViewport">
+                                        <canvas id="createSourceCanvas" width="130" height="130" style="width:130px; height:130px; display:block;"></canvas>
+                                        <div style="position:absolute; inset:0; border:2px solid #06b6d4; pointer-events:none; border-radius:6px;"></div>
+                                    </div>
+
+                                    <!-- Live Square Icon Preview -->
+                                    <div class="flex-grow-1">
+                                        <div class="small text-secondary mb-1" style="font-size:0.72rem;">Icon Preview (48x48):</div>
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <canvas id="createPreviewCanvas" width="48" height="48" style="width:48px; height:48px; border-radius:8px; border:2px solid #06b6d4; background:#0b1120;"></canvas>
+                                            <div>
+                                                <div class="badge bg-success" style="font-size:0.68rem;">✓ 1:1 Square</div>
+                                                <div class="text-secondary small" style="font-size:0.68rem;">Optimized & Compressed</div>
+                                            </div>
+                                        </div>
+                                        <!-- Zoom Slider -->
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="text-secondary small" style="font-size:0.7rem;">🔍 Zoom:</span>
+                                            <input type="range" id="createZoomSlider" min="1" max="3" step="0.05" value="1" class="form-range" style="flex:1 1 auto;" oninput="onCropperZoom('create', this.value)" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex justify-content-end gap-2 pt-1 border-top border-secondary border-opacity-25">
+                                    <button type="button" class="btn btn-sm btn-secondary py-1 px-3" style="font-size:0.78rem;" onclick="cancelCropper('create')">Cancel</button>
+                                    <button type="button" class="btn btn-sm btn-glow py-1 px-3" style="font-size:0.78rem;" onclick="applyCroppedIcon('create')">
+                                        ✂️ Compress & Use Icon
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Icon Category Filter Tabs -->
+                        <div class="d-flex gap-1 overflow-x-auto pb-1 mb-2 no-scrollbar" style="font-size:0.75rem;">
+                            <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 rounded-pill cat-icon-tab active" data-cat="all" onclick="filterIconTabs('all', this, 'catIconGrid')">All Icons</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill cat-icon-tab" data-cat="custom" onclick="filterIconTabs('custom', this, 'catIconGrid')">⭐ My Custom (<span class="custom-icon-count">0</span>)</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill cat-icon-tab" data-cat="folders" onclick="filterIconTabs('folders', this, 'catIconGrid')">📁 Folders</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill cat-icon-tab" data-cat="work" onclick="filterIconTabs('work', this, 'catIconGrid')">💼 Work</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill cat-icon-tab" data-cat="finance" onclick="filterIconTabs('finance', this, 'catIconGrid')">🏦 Finance</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill cat-icon-tab" data-cat="security" onclick="filterIconTabs('security', this, 'catIconGrid')">🔒 Security</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill cat-icon-tab" data-cat="tech" onclick="filterIconTabs('tech', this, 'catIconGrid')">💻 Tech</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill cat-icon-tab" data-cat="personal" onclick="filterIconTabs('personal', this, 'catIconGrid')">🏠 Life</button>
+                        </div>
+
+                        <!-- Grid of Icons -->
+                        <div id="catIconGrid" class="d-flex flex-wrap gap-1 p-2 rounded-2" 
+                             style="max-height:160px; overflow-y:auto; background:rgba(15,23,42,0.9); border:1px solid rgba(255,255,255,0.08);">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Color Accent Section -->
+                    <div class="mb-2">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label small text-light fw-semibold mb-0">Color Accent</label>
+                            <span id="selectedColorCode" class="text-secondary small" style="font-size:0.75rem; font-family:monospace;">#06b6d4</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="color" id="catColorInput" name="Color" class="form-control form-control-color" value="#06b6d4" 
+                                   style="height:38px; width:44px; min-width:44px; background:transparent; border-color:rgba(6,182,212,0.3); cursor:pointer;" 
+                                   oninput="onColorChanged(this.value)" />
+                            <div class="d-flex flex-wrap gap-1 align-items-center flex-grow-1" id="colorSwatchesContainer">
+                                <button type="button" class="color-swatch-btn active" style="--swatch-color:#06b6d4;" onclick="applyColorSwatch('#06b6d4', this)" title="Cyan"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#3b82f6;" onclick="applyColorSwatch('#3b82f6', this)" title="Blue"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#6366f1;" onclick="applyColorSwatch('#6366f1', this)" title="Indigo"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#8b5cf6;" onclick="applyColorSwatch('#8b5cf6', this)" title="Purple"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#ec4899;" onclick="applyColorSwatch('#ec4899', this)" title="Pink"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#ef4444;" onclick="applyColorSwatch('#ef4444', this)" title="Red"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#f59e0b;" onclick="applyColorSwatch('#f59e0b', this)" title="Amber"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#10b981;" onclick="applyColorSwatch('#10b981', this)" title="Emerald"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#64748b;" onclick="applyColorSwatch('#64748b', this)" title="Slate"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Sticky Footer: Always visible at bottom -->
+                <div class="modal-footer border-top border-secondary py-3 px-4 flex-shrink-0" style="background:rgba(10,15,30,0.98); z-index:10;">
+                    <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-glow px-4">Create Folder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     EDIT CATEGORY MODAL (EDIT FOLDER ICON, NAME, COLOR, OR DELETE)
+     ========================================================================== -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:560px; max-height:90vh; margin:1.5rem auto;">
+        <div class="modal-content glass-card" style="background:#0b1120; border-color:rgba(6,182,212,0.3); color:#fff; box-shadow: 0 25px 60px rgba(0,0,0,0.7); max-height:90vh; display:flex; flex-direction:column; overflow:hidden;">
+            <div class="modal-header border-bottom border-secondary py-3 px-4 flex-shrink-0" style="background:rgba(15,23,42,0.98);">
+                <div class="d-flex align-items-center gap-2">
+                    <span id="editModalTitleIcon" style="font-size:1.4rem;">📁</span>
+                    <h5 class="modal-title fw-bold m-0 text-light">Edit Folder / Category</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-area="User" asp-controller="Vault" asp-action="UpdateCategory" id="editCategoryForm" style="display:flex; flex-direction:column; flex:1 1 auto; overflow:hidden; min-height:0; margin:0;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="editCatId" name="id" />
+                <div class="modal-body px-4 py-3" style="overflow-y:auto; flex:1 1 auto; min-height:0;">
+
+                    <!-- Live Preview Card -->
+                    <div class="p-3 mb-3 rounded-3 d-flex align-items-center gap-3" 
+                         id="editCatLivePreviewCard"
+                         style="background:rgba(255,255,255,0.03); border:1px solid rgba(6,182,212,0.25); border-left:4px solid #06b6d4; transition:all 0.2s;">
+                        <div id="editCatPreviewIconBox" class="d-flex align-items-center justify-content-center" 
+                             style="width:52px; height:52px; min-width:52px; font-size:1.85rem; border-radius:12px; background:rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.4); box-shadow:0 0 15px rgba(6,182,212,0.25); transition:all 0.2s;">
+                            📁
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="fw-bold text-light text-truncate" id="editCatPreviewName" style="font-size:1.05rem;">
+                                Folder Name
+                            </div>
+                            <div class="small text-secondary d-flex align-items-center gap-2">
+                                <span class="badge" style="background:rgba(6,182,212,0.2); color:#67e8f9; font-size:0.7rem; font-weight:500;">Editing Folder</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Folder Item Status (Empty vs Has Items) -->
+                    <div id="editFolderItemStatus"></div>
+
+                    <!-- Folder Name Input -->
+                    <div class="mb-3">
+                        <label class="form-label small text-light fw-semibold">Folder Name <span class="text-danger">*</span></label>
+                        <input type="text" id="editCatNameInput" name="name" class="form-control auth-input" required oninput="updateEditFolderLivePreview()" />
+                    </div>
+
+                    <!-- Folder Icon Selector Section -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label small text-light fw-semibold mb-0">Change Folder Icon</label>
+                            <span class="text-secondary small" style="font-size:0.75rem;">Selected: <strong id="editSelectedIconLabel" class="text-info fs-6">📁</strong></span>
+                        </div>
+
+                        <!-- Current Icon Bar -->
+                        <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-2" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                            <input type="hidden" id="editCatIconInput" name="icon" value="📁" />
+                            <div id="editCatCurrentIconDisplay" class="d-flex align-items-center justify-content-center overflow-hidden" 
+                                 style="width:46px; height:46px; min-width:46px; font-size:1.4rem; background:rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.4); border-radius:8px;">
+                                📁
+                            </div>
+                            <div class="flex-grow-1 small text-secondary" style="line-height:1.25; font-size:0.75rem;">
+                                Selected folder icon. Niche diye gaye custom image upload/crop, link ya presets se choose karein.
+                            </div>
+                        </div>
+
+                        <!-- Custom Image Icon Upload & 1:1 Crop Section -->
+                        <div class="p-2 mb-2 rounded-2" style="background:rgba(6,182,212,0.06); border:1px solid rgba(6,182,212,0.25);">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="small fw-semibold text-info" style="font-size:0.75rem;">
+                                    🖼️ Custom Image Icon (Upload File ya Image Link)
+                                </span>
+                                <span class="text-secondary small" style="font-size:0.7rem;">Auto-crops to 1:1 icon</span>
+                            </div>
+                            
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <label class="btn btn-sm btn-outline-info d-flex align-items-center gap-1 py-1 px-3 m-0" style="cursor:pointer; font-size:0.78rem;">
+                                    <span>📁 Upload Image</span>
+                                    <input type="file" id="editImgFileInput" accept="image/*" class="d-none" onchange="handleImageFileSelected(this, 'edit')" />
+                                </label>
+                                
+                                <div class="d-flex gap-1 flex-grow-1" style="min-width:190px;">
+                                    <input type="url" id="editImgUrlInput" placeholder="Paste image link (https://...)" class="form-control auth-input py-1 px-2" style="font-size:0.78rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();handleImageUrlLoad('edit');}" />
+                                    <button type="button" class="btn btn-sm btn-outline-info py-1 px-2 text-nowrap" style="font-size:0.78rem;" onclick="handleImageUrlLoad('edit')">
+                                        <span>🔗 Load</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Interactive 1:1 Square Cropper & Compressor Box -->
+                            <div id="editCropperBox" class="p-2 rounded-2 mt-2" style="display:none; background:#070d19; border:1px solid #06b6d4; box-shadow:0 0 15px rgba(6,182,212,0.25);">
+                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom border-secondary border-opacity-50">
+                                    <span class="small fw-bold text-info" style="font-size:0.75rem;">✂️ Crop, Adjust & Compress to Icon</span>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 text-decoration-none" onclick="cancelCropper('edit')">✕</button>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    <!-- Viewport Canvas (User can drag/pan inside) -->
+                                    <div style="position:relative; width:130px; height:130px; min-width:130px; background:#000; border-radius:8px; overflow:hidden; border:2px dashed rgba(6,182,212,0.6); cursor:grab;" id="editCropViewport">
+                                        <canvas id="editSourceCanvas" width="130" height="130" style="width:130px; height:130px; display:block;"></canvas>
+                                        <div style="position:absolute; inset:0; border:2px solid #06b6d4; pointer-events:none; border-radius:6px;"></div>
+                                    </div>
+
+                                    <!-- Live Square Icon Preview -->
+                                    <div class="flex-grow-1">
+                                        <div class="small text-secondary mb-1" style="font-size:0.72rem;">Icon Preview (48x48):</div>
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <canvas id="editPreviewCanvas" width="48" height="48" style="width:48px; height:48px; border-radius:8px; border:2px solid #06b6d4; background:#0b1120;"></canvas>
+                                            <div>
+                                                <div class="badge bg-success" style="font-size:0.68rem;">✓ 1:1 Square</div>
+                                                <div class="text-secondary small" style="font-size:0.68rem;">Optimized & Compressed</div>
+                                            </div>
+                                        </div>
+                                        <!-- Zoom Slider -->
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="text-secondary small" style="font-size:0.7rem;">🔍 Zoom:</span>
+                                            <input type="range" id="editZoomSlider" min="1" max="3" step="0.05" value="1" class="form-range" style="flex:1 1 auto;" oninput="onCropperZoom('edit', this.value)" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex justify-content-end gap-2 pt-1 border-top border-secondary border-opacity-25">
+                                    <button type="button" class="btn btn-sm btn-secondary py-1 px-3" style="font-size:0.78rem;" onclick="cancelCropper('edit')">Cancel</button>
+                                    <button type="button" class="btn btn-sm btn-glow py-1 px-3" style="font-size:0.78rem;" onclick="applyCroppedIcon('edit')">
+                                        ✂️ Compress & Use Icon
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Icon Category Filter Tabs -->
+                        <div class="d-flex gap-1 overflow-x-auto pb-1 mb-2 no-scrollbar" style="font-size:0.75rem;">
+                            <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 rounded-pill edit-cat-icon-tab active" data-cat="all" onclick="filterIconTabs('all', this, 'editCatIconGrid')">All Icons</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill edit-cat-icon-tab" data-cat="custom" onclick="filterIconTabs('custom', this, 'editCatIconGrid')">⭐ My Custom (<span class="custom-icon-count">0</span>)</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill edit-cat-icon-tab" data-cat="folders" onclick="filterIconTabs('folders', this, 'editCatIconGrid')">📁 Folders</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill edit-cat-icon-tab" data-cat="work" onclick="filterIconTabs('work', this, 'editCatIconGrid')">💼 Work</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill edit-cat-icon-tab" data-cat="finance" onclick="filterIconTabs('finance', this, 'editCatIconGrid')">🏦 Finance</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill edit-cat-icon-tab" data-cat="security" onclick="filterIconTabs('security', this, 'editCatIconGrid')">🔒 Security</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill edit-cat-icon-tab" data-cat="tech" onclick="filterIconTabs('tech', this, 'editCatIconGrid')">💻 Tech</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill edit-cat-icon-tab" data-cat="personal" onclick="filterIconTabs('personal', this, 'editCatIconGrid')">🏠 Life</button>
+                        </div>
+
+                        <!-- Grid of Icons -->
+                        <div id="editCatIconGrid" class="d-flex flex-wrap gap-1 p-2 rounded-2" 
+                             style="max-height:160px; overflow-y:auto; background:rgba(15,23,42,0.9); border:1px solid rgba(255,255,255,0.08);">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Color Accent Section -->
+                    <div class="mb-2">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label small text-light fw-semibold mb-0">Color Accent</label>
+                            <span id="editSelectedColorCode" class="text-secondary small" style="font-size:0.75rem; font-family:monospace;">#06b6d4</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="color" id="editCatColorInput" name="color" class="form-control form-control-color" value="#06b6d4" 
+                                   style="height:38px; width:44px; min-width:44px; background:transparent; border-color:rgba(6,182,212,0.3); cursor:pointer;" 
+                                   oninput="onEditColorChanged(this.value)" />
+                            <div class="d-flex flex-wrap gap-1 align-items-center flex-grow-1" id="editColorSwatchesContainer">
+                                <button type="button" class="color-swatch-btn active" style="--swatch-color:#06b6d4;" onclick="applyEditColorSwatch('#06b6d4', this)" title="Cyan"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#3b82f6;" onclick="applyEditColorSwatch('#3b82f6', this)" title="Blue"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#6366f1;" onclick="applyEditColorSwatch('#6366f1', this)" title="Indigo"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#8b5cf6;" onclick="applyEditColorSwatch('#8b5cf6', this)" title="Purple"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#ec4899;" onclick="applyEditColorSwatch('#ec4899', this)" title="Pink"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#ef4444;" onclick="applyEditColorSwatch('#ef4444', this)" title="Red"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#f59e0b;" onclick="applyEditColorSwatch('#f59e0b', this)" title="Amber"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#10b981;" onclick="applyEditColorSwatch('#10b981', this)" title="Emerald"></button>
+                                <button type="button" class="color-swatch-btn" style="--swatch-color:#64748b;" onclick="applyEditColorSwatch('#64748b', this)" title="Slate"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Sticky Footer: Always visible at bottom! -->
+                <div class="modal-footer border-top border-secondary py-3 px-4 d-flex justify-content-between flex-shrink-0" style="background:rgba(10,15,30,0.98); z-index:10;">
+                    <div id="editDeleteBtnWrapper">
+                        <button type="button" class="btn btn-outline-danger btn-sm px-3" id="btnDeleteCategory" onclick="submitDeleteCategory()">
+                            🗑️ Delete Folder
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-glow px-4">💾 Save Changes</button>
                     </div>
                 </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-glow">Create Folder</button>
-                </div>
+            </form>
+            <!-- Separate Hidden Delete Form -->
+            <form method="post" asp-area="User" asp-controller="Vault" asp-action="DeleteCategory" id="deleteCategoryForm" style="display:none;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="deleteCatId" name="id" />
             </form>
         </div>
     </div>
@@ -428,6 +876,7 @@
      ========================================================================== -->
 @section Scripts {
 <script>
+    window.EXISTING_CATEGORIES = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(categories.Select(c => new { c.Id, c.Name, c.Icon, c.Color, c.TotalItems })));
     let activePasswordTimer = null;
 
     // Open and Populate Right Slide-out Drawer via AJAX
@@ -644,6 +1093,800 @@
             e.preventDefault();
             const input = document.getElementById('vaultSearchInput');
             if (input) input.focus();
+        }
+    });
+
+    // ==========================================================================
+    // FOLDER & CATEGORY ICON PICKER LOGIC
+    // ==========================================================================
+    const FOLDER_ICONS = [
+        // Folders & Documents
+        { icon: '📁', cat: 'folders' },
+        { icon: '📂', cat: 'folders' },
+        { icon: '🗂️', cat: 'folders' },
+        { icon: '🗃️', cat: 'folders' },
+        { icon: '📦', cat: 'folders' },
+        { icon: '🏷️', cat: 'folders' },
+        { icon: '📌', cat: 'folders' },
+        { icon: '🗄️', cat: 'folders' },
+        { icon: '📋', cat: 'folders' },
+        { icon: '📄', cat: 'folders' },
+        { icon: '📑', cat: 'folders' },
+        { icon: '🧾', cat: 'folders' },
+        { icon: '📚', cat: 'folders' },
+        { icon: '✉️', cat: 'folders' },
+        { icon: '📥', cat: 'folders' },
+        { icon: '📤', cat: 'folders' },
+
+        // Work & Business
+        { icon: '💼', cat: 'work' },
+        { icon: '🏢', cat: 'work' },
+        { icon: '📊', cat: 'work' },
+        { icon: '📈', cat: 'work' },
+        { icon: '🤝', cat: 'work' },
+        { icon: '🎯', cat: 'work' },
+        { icon: '🚀', cat: 'work' },
+        { icon: '💡', cat: 'work' },
+        { icon: '👔', cat: 'work' },
+        { icon: '⚖️', cat: 'work' },
+
+        // Finance & Banking
+        { icon: '🏦', cat: 'finance' },
+        { icon: '💳', cat: 'finance' },
+        { icon: '💰', cat: 'finance' },
+        { icon: '💵', cat: 'finance' },
+        { icon: '🪙', cat: 'finance' },
+        { icon: '🛒', cat: 'finance' },
+        { icon: '💎', cat: 'finance' },
+        { icon: '💸', cat: 'finance' },
+        { icon: '🛍️', cat: 'finance' },
+        { icon: '🏧', cat: 'finance' },
+
+        // Security & Identity
+        { icon: '🔒', cat: 'security' },
+        { icon: '🔐', cat: 'security' },
+        { icon: '🔑', cat: 'security' },
+        { icon: '🛡️', cat: 'security' },
+        { icon: '🆔', cat: 'security' },
+        { icon: '👁️', cat: 'security' },
+        { icon: '⚡', cat: 'security' },
+        { icon: '🚨', cat: 'security' },
+        { icon: '🕵️', cat: 'security' },
+        { icon: '🧬', cat: 'security' },
+
+        // Tech & Dev
+        { icon: '💻', cat: 'tech' },
+        { icon: '🖥️', cat: 'tech' },
+        { icon: '📱', cat: 'tech' },
+        { icon: '⚙️', cat: 'tech' },
+        { icon: '🔧', cat: 'tech' },
+        { icon: '☁️', cat: 'tech' },
+        { icon: '🌐', cat: 'tech' },
+        { icon: '📡', cat: 'tech' },
+        { icon: '🤖', cat: 'tech' },
+        { icon: '🎮', cat: 'tech' },
+
+        // Life & Personal
+        { icon: '🏠', cat: 'personal' },
+        { icon: '👤', cat: 'personal' },
+        { icon: '👥', cat: 'personal' },
+        { icon: '🚗', cat: 'personal' },
+        { icon: '✈️', cat: 'personal' },
+        { icon: '🍕', cat: 'personal' },
+        { icon: '🍔', cat: 'personal' },
+        { icon: '☕', cat: 'personal' },
+        { icon: '🩺', cat: 'personal' },
+        { icon: '🎓', cat: 'personal' },
+        { icon: '🎵', cat: 'personal' },
+        { icon: '📸', cat: 'personal' },
+        { icon: '🎬', cat: 'personal' },
+        { icon: '🎨', cat: 'personal' },
+        { icon: '⭐', cat: 'personal' },
+        { icon: '💖', cat: 'personal' },
+        { icon: '🎁', cat: 'personal' },
+        { icon: '🌟', cat: 'personal' },
+        { icon: '🔥', cat: 'personal' },
+        { icon: '🏆', cat: 'personal' }
+    ];
+
+    // ==========================================================================
+    // FOLDER & CATEGORY ICON PICKER LOGIC (PRESETS + CUSTOM IMAGES + CROP/COMPRESS)
+    // ==========================================================================
+    function renderIconHtml(icon, size = 24) {
+        if (!icon) return '📁';
+        if (icon.startsWith('http') || icon.startsWith('data:image') || icon.startsWith('/uploads/')) {
+            return `<img src="${icon}" alt="icon" style="width:${size}px; height:${size}px; object-fit:cover; border-radius:4px; display:inline-block; vertical-align:middle;" />`;
+        }
+        return `<span>${icon}</span>`;
+    }
+
+    function getCustomFolderIcons() {
+        let list = [];
+        try {
+            const raw = localStorage.getItem('cyh_custom_folder_icons');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) list = parsed;
+            }
+        } catch (e) {
+            console.error('Error reading custom icons:', e);
+        }
+
+        // Dynamically include any custom icons saved in existing server categories
+        if (window.EXISTING_CATEGORIES && Array.isArray(window.EXISTING_CATEGORIES)) {
+            window.EXISTING_CATEGORIES.forEach(c => {
+                const icon = c.Icon || c.icon;
+                if (icon && (icon.startsWith('http') || icon.startsWith('data:image') || icon.startsWith('/uploads/'))) {
+                    if (!list.includes(icon)) {
+                        list.push(icon);
+                    }
+                }
+            });
+        }
+        return list;
+    }
+
+    function saveCustomFolderIcons(icons) {
+        try {
+            localStorage.setItem('cyh_custom_folder_icons', JSON.stringify(icons));
+        } catch (e) {
+            console.error('Error saving custom icons:', e);
+        }
+        updateCustomIconCount();
+    }
+
+    function updateCustomIconCount() {
+        const count = getCustomFolderIcons().length;
+        document.querySelectorAll('.custom-icon-count').forEach(el => {
+            el.textContent = count;
+        });
+    }
+
+    // --- INTERACTIVE 1:1 SQUARE IMAGE CROPPER & COMPRESSOR ---
+    const cropperStates = {
+        create: { img: null, scale: 1, panX: 0, panY: 0, isDragging: false, startX: 0, startY: 0, initialized: false },
+        edit:   { img: null, scale: 1, panX: 0, panY: 0, isDragging: false, startX: 0, startY: 0, initialized: false }
+    };
+
+    function handleImageFileSelected(input, mode) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            loadCropperImage(mode, e.target.result);
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
+    }
+
+    function handleImageUrlLoad(mode) {
+        const input = document.getElementById(mode === 'edit' ? 'editImgUrlInput' : 'catImgUrlInput');
+        const url = (input?.value || '').trim();
+        if (!url) {
+            alert('Kripya pehle image ka link paste karein.');
+            return;
+        }
+        loadCropperImage(mode, url);
+    }
+
+    function loadCropperImage(mode, src) {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = function() {
+            openCropper(mode, img);
+        };
+        img.onerror = function() {
+            alert('⚠️ Image load nahi ho payi!\n\nTip: Agar kisi external website ne direct link access block kar rakha hai, to image par Right-Click karke "Save image as" karein aur "Upload Image" button se crop karein.');
+        };
+        img.src = src;
+    }
+
+    function openCropper(mode, img) {
+        const state = cropperStates[mode];
+        state.img = img;
+        state.scale = 1;
+        state.panX = 0;
+        state.panY = 0;
+
+        const zoomSlider = document.getElementById(mode === 'edit' ? 'editZoomSlider' : 'createZoomSlider');
+        if (zoomSlider) zoomSlider.value = 1;
+
+        const box = document.getElementById(mode === 'edit' ? 'editCropperBox' : 'createCropperBox');
+        if (box) box.style.display = 'block';
+
+        if (!state.initialized) {
+            setupCropperViewportEvents(mode);
+            state.initialized = true;
+        }
+
+        drawCropper(mode);
+    }
+
+    function setupCropperViewportEvents(mode) {
+        const viewport = document.getElementById(mode === 'edit' ? 'editCropViewport' : 'createCropViewport');
+        if (!viewport) return;
+        const state = cropperStates[mode];
+
+        function onPointerDown(e) {
+            state.isDragging = true;
+            viewport.style.cursor = 'grabbing';
+            const pageX = e.touches ? e.touches[0].pageX : e.pageX;
+            const pageY = e.touches ? e.touches[0].pageY : e.pageY;
+            state.startX = pageX - state.panX;
+            state.startY = pageY - state.panY;
+        }
+
+        function onPointerMove(e) {
+            if (!state.isDragging) return;
+            const pageX = e.touches ? e.touches[0].pageX : e.pageX;
+            const pageY = e.touches ? e.touches[0].pageY : e.pageY;
+            state.panX = pageX - state.startX;
+            state.panY = pageY - state.startY;
+            drawCropper(mode);
+        }
+
+        function onPointerUp() {
+            state.isDragging = false;
+            viewport.style.cursor = 'grab';
+        }
+
+        viewport.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        viewport.addEventListener('touchstart', onPointerDown, { passive: true });
+        window.addEventListener('touchmove', onPointerMove, { passive: true });
+        window.addEventListener('touchend', onPointerUp);
+    }
+
+    function drawCropper(mode) {
+        const state = cropperStates[mode];
+        if (!state.img) return;
+
+        const sourceCanvas = document.getElementById(mode === 'edit' ? 'editSourceCanvas' : 'createSourceCanvas');
+        const previewCanvas = document.getElementById(mode === 'edit' ? 'editPreviewCanvas' : 'createPreviewCanvas');
+        if (!sourceCanvas || !previewCanvas) return;
+
+        const sCtx = sourceCanvas.getContext('2d');
+        const pCtx = previewCanvas.getContext('2d');
+
+        sCtx.clearRect(0, 0, 130, 130);
+        pCtx.clearRect(0, 0, 48, 48);
+
+        const img = state.img;
+        const minDim = Math.min(img.width, img.height);
+        const baseScale = (130 / minDim) * state.scale;
+
+        const drawW = img.width * baseScale;
+        const drawH = img.height * baseScale;
+        const drawX = (130 - drawW) / 2 + state.panX;
+        const drawY = (130 - drawH) / 2 + state.panY;
+
+        // Draw on Source Viewport (130x130)
+        sCtx.drawImage(img, drawX, drawY, drawW, drawH);
+
+        // Draw downscaled to 48x48 on Preview Canvas
+        pCtx.drawImage(sourceCanvas, 0, 0, 130, 130, 0, 0, 48, 48);
+    }
+
+    function onCropperZoom(mode, val) {
+        cropperStates[mode].scale = parseFloat(val);
+        drawCropper(mode);
+    }
+
+    function cancelCropper(mode) {
+        const box = document.getElementById(mode === 'edit' ? 'editCropperBox' : 'createCropperBox');
+        if (box) box.style.display = 'none';
+        cropperStates[mode].img = null;
+    }
+
+    function applyCroppedIcon(mode) {
+        const previewCanvas = document.getElementById(mode === 'edit' ? 'editPreviewCanvas' : 'createPreviewCanvas');
+        if (!previewCanvas) return;
+
+        // Create 64x64 export canvas for high-DPI crisp folder icon
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = 64;
+        exportCanvas.height = 64;
+        const expCtx = exportCanvas.getContext('2d');
+        expCtx.drawImage(previewCanvas, 0, 0, 48, 48, 0, 0, 64, 64);
+
+        // Compress to WebP / PNG
+        let dataUrl = exportCanvas.toDataURL('image/webp', 0.85);
+        if (!dataUrl || dataUrl.length < 50 || dataUrl.indexOf('data:image/webp') === -1) {
+            dataUrl = exportCanvas.toDataURL('image/png');
+        }
+
+        // Save to custom icons list
+        let customList = getCustomFolderIcons();
+        if (!customList.includes(dataUrl)) {
+            customList.unshift(dataUrl);
+            saveCustomFolderIcons(customList);
+        }
+
+        // Repopulate both icon grids so newly cropped icon immediately exists as a selectable button!
+        const currentCreateIcon = mode === 'create' ? dataUrl : (document.getElementById('catIconInput')?.value || '📁');
+        const currentEditIcon = mode === 'edit' ? dataUrl : (document.getElementById('editCatIconInput')?.value || '📁');
+        populateIconGrid('catIconGrid', currentCreateIcon, 'selectFolderIcon');
+        populateIconGrid('editCatIconGrid', currentEditIcon, 'selectEditFolderIcon');
+
+        // Auto-select newly cropped & compressed icon
+        if (mode === 'edit') {
+            selectEditFolderIcon(dataUrl);
+        } else {
+            selectFolderIcon(dataUrl);
+        }
+
+        // Close cropper box
+        cancelCropper(mode);
+
+        // Switch to custom tab
+        const tabSelector = mode === 'edit' ? '.edit-cat-icon-tab[data-cat="custom"]' : '.cat-icon-tab[data-cat="custom"]';
+        const customTab = document.querySelector(tabSelector);
+        if (customTab) {
+            filterIconTabs('custom', customTab, mode === 'edit' ? 'editCatIconGrid' : 'catIconGrid');
+        }
+    }
+
+    // --- QUICK EMOJI ADD ---
+    function quickAddCustomIcon(mode, emoji) {
+        let customList = getCustomFolderIcons();
+        if (!customList.includes(emoji)) {
+            customList.unshift(emoji);
+            saveCustomFolderIcons(customList);
+        }
+
+        const gridId = mode === 'edit' ? 'editCatIconGrid' : 'catIconGrid';
+        const clickHandler = mode === 'edit' ? 'selectEditFolderIcon' : 'selectFolderIcon';
+
+        populateIconGrid(gridId, emoji, clickHandler);
+        if (mode === 'edit') {
+            selectEditFolderIcon(emoji);
+        } else {
+            selectFolderIcon(emoji);
+        }
+
+        const tabSelector = mode === 'edit' ? '.edit-cat-icon-tab[data-cat="custom"]' : '.cat-icon-tab[data-cat="custom"]';
+        const customTab = document.querySelector(tabSelector);
+        if (customTab) {
+            filterIconTabs('custom', customTab, gridId);
+        }
+    }
+
+    function addCustomIconFromInput(mode) {
+        const inputId = mode === 'edit' ? 'editCustomAddInput' : 'catCustomAddInput';
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        const raw = input.value.trim();
+        if (!raw) return;
+
+        quickAddCustomIcon(mode, raw);
+        input.value = '';
+    }
+
+    // --- DELETE CUSTOM ICON (WITH IN-USE ALERT SHOWING HOW MANY PLACES USED) ---
+    function deleteCustomFolderIcon(icon, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        // Check how many existing folders are using this exact icon
+        const usedFolders = (window.EXISTING_CATEGORIES || []).filter(c => (c.Icon || c.icon) === icon);
+
+        if (usedFolders.length > 0) {
+            const folderList = usedFolders.map(f => `  • "${f.Name || f.name}"`).join('\n');
+            alert(
+                `⚠️ Yeh icon abhi delete nahi kiya ja sakta!\n\n` +
+                `Yeh icon abhi ${usedFolders.length} folder(s) mein use ho raha hai:\n` +
+                folderList + `\n\n` +
+                `Jab tak yeh folder(s) is icon ko use kar rahe hain, tab tak ise delete nahi kiya ja sakta.\n` +
+                `Kripya pehle un folders ka icon change karein.`
+            );
+            return;
+        }
+
+        if (!confirm(`Yeh icon kisi bhi folder mein use nahi ho raha hai (0 places).\n\nKya aap ise apni custom icons list se delete karna chahte hain?`)) {
+            return;
+        }
+
+        let list = getCustomFolderIcons();
+        list = list.filter(item => item !== icon);
+        saveCustomFolderIcons(list);
+
+        // Refresh grids with current values
+        const createSelected = document.getElementById('catIconInput')?.value || '📁';
+        const editSelected = document.getElementById('editCatIconInput')?.value || '📁';
+
+        populateIconGrid('catIconGrid', createSelected, 'selectFolderIcon');
+        populateIconGrid('editCatIconGrid', editSelected, 'selectEditFolderIcon');
+
+        // If the deleted icon was selected, reset to default 📁
+        if (createSelected === icon) selectFolderIcon('📁');
+        if (editSelected === icon) selectEditFolderIcon('📁');
+    }
+
+    function populateIconGrid(gridId, selectedIcon, clickHandlerName) {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const customIcons = getCustomFolderIcons();
+
+        // If selectedIcon is custom (not in FOLDER_ICONS and not yet in custom list), dynamically register it
+        if (selectedIcon && !FOLDER_ICONS.some(f => f.icon === selectedIcon) && !customIcons.includes(selectedIcon)) {
+            customIcons.unshift(selectedIcon);
+            saveCustomFolderIcons(customIcons);
+        }
+
+        // 1. Render Custom Icons first (with hover delete badge)
+        customIcons.forEach(icon => {
+            const isImage = icon.startsWith('http') || icon.startsWith('data:image') || icon.startsWith('/uploads/');
+            const usedIn = (window.EXISTING_CATEGORIES || []).filter(c => (c.Icon || c.icon) === icon);
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'custom-icon-wrapper position-relative d-inline-flex';
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `folder-icon-btn ${selectedIcon === icon ? 'active' : ''}`;
+            btn.setAttribute('data-icon', icon);
+            btn.setAttribute('data-cat', 'custom');
+            btn.title = isImage ? `Custom Image (${usedIn.length} in use)` : `Custom Icon: ${icon}`;
+
+            if (isImage) {
+                btn.innerHTML = `<img src="${icon}" style="width:26px; height:26px; object-fit:cover; border-radius:4px;" />`;
+            } else {
+                btn.innerText = icon;
+            }
+            btn.onclick = () => window[clickHandlerName](icon);
+            wrapper.appendChild(btn);
+
+            // Delete badge button (✕)
+            const delBadge = document.createElement('button');
+            delBadge.type = 'button';
+            delBadge.className = 'btn-delete-custom-icon';
+            delBadge.title = usedIn.length > 0 ? `Cannot delete: in use by ${usedIn.length} folder(s)` : `Delete custom icon`;
+            delBadge.innerHTML = '✕';
+            delBadge.onclick = (e) => deleteCustomFolderIcon(icon, e);
+            wrapper.appendChild(delBadge);
+
+            grid.appendChild(wrapper);
+        });
+
+        // 2. Render Curated Preset FOLDER_ICONS
+        FOLDER_ICONS.forEach(item => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `folder-icon-btn ${selectedIcon === item.icon ? 'active' : ''}`;
+            btn.setAttribute('data-icon', item.icon);
+            btn.setAttribute('data-cat', item.cat);
+            btn.title = `${item.cat}: ${item.icon}`;
+            btn.innerText = item.icon;
+            btn.onclick = () => window[clickHandlerName](item.icon);
+            grid.appendChild(btn);
+        });
+
+        updateCustomIconCount();
+    }
+
+    function filterIconTabs(category, tabBtn, gridId) {
+        const tabsContainer = tabBtn.parentElement;
+        tabsContainer.querySelectorAll('button').forEach(b => {
+            b.classList.remove('active', 'btn-outline-info');
+            b.classList.add('btn-outline-secondary');
+        });
+        tabBtn.classList.remove('btn-outline-secondary');
+        tabBtn.classList.add('active', 'btn-outline-info');
+
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        const iconButtons = grid.querySelectorAll('.folder-icon-btn');
+        iconButtons.forEach(btn => {
+            const cat = btn.getAttribute('data-cat');
+            const target = btn.closest('.custom-icon-wrapper') || btn;
+            if (category === 'all' || cat === category) {
+                target.style.display = 'inline-flex';
+            } else {
+                target.style.display = 'none';
+            }
+        });
+    }
+
+    // --- CREATE CATEGORY ACTIONS ---
+    function selectFolderIcon(icon) {
+        const input = document.getElementById('catIconInput');
+        if (input) input.value = icon;
+        const display = document.getElementById('catCurrentIconDisplay');
+        if (display) display.innerHTML = renderIconHtml(icon, 32);
+        const label = document.getElementById('selectedIconLabel');
+        if (label) label.innerHTML = renderIconHtml(icon, 20);
+        const preview = document.getElementById('catPreviewIconBox');
+        if (preview) preview.innerHTML = renderIconHtml(icon, 38);
+        const titleIcon = document.getElementById('modalTitleIcon');
+        if (titleIcon) titleIcon.innerHTML = renderIconHtml(icon, 22);
+
+        const grid = document.getElementById('catIconGrid');
+        if (grid) {
+            grid.querySelectorAll('.folder-icon-btn').forEach(btn => {
+                if (btn.getAttribute('data-icon') === icon) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    function onCustomIconInput(val) {
+        val = (val || '').trim();
+        const icon = val || '📁';
+        selectFolderIcon(icon);
+    }
+
+    function onColorChanged(color) {
+        const code = document.getElementById('selectedColorCode');
+        if (code) code.innerText = color;
+        const preview = document.getElementById('catPreviewIconBox');
+        if (preview) {
+            preview.style.borderColor = color;
+            preview.style.backgroundColor = color + '26';
+            preview.style.boxShadow = `0 0 16px ${color}4d`;
+        }
+        const card = document.getElementById('catLivePreviewCard');
+        if (card) {
+            card.style.borderLeftColor = color;
+        }
+        const badge = document.querySelector('#catLivePreviewCard .badge');
+        if (badge) {
+            badge.style.backgroundColor = color + '2b';
+            badge.style.color = color;
+            badge.style.borderColor = color + '66';
+        }
+        const swatches = document.getElementById('colorSwatchesContainer');
+        if (swatches) {
+            swatches.querySelectorAll('.color-swatch-btn').forEach(btn => {
+                const swatchColor = btn.style.getPropertyValue('--swatch-color');
+                if (swatchColor && swatchColor.toLowerCase() === color.toLowerCase()) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    function applyColorSwatch(color, btn) {
+        const input = document.getElementById('catColorInput');
+        if (input) input.value = color;
+        onColorChanged(color);
+        if (btn && btn.parentElement) {
+            btn.parentElement.querySelectorAll('.color-swatch-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    }
+
+    function updateFolderLivePreview() {
+        const input = document.getElementById('catNameInput');
+        const preview = document.getElementById('catPreviewName');
+        if (input && preview) {
+            preview.innerText = input.value.trim() || 'New Folder';
+        }
+    }
+
+    function applyFolderTemplate(name, icon, color) {
+        const nameInput = document.getElementById('catNameInput');
+        if (nameInput) {
+            nameInput.value = name;
+            updateFolderLivePreview();
+        }
+        selectFolderIcon(icon);
+        const colorInput = document.getElementById('catColorInput');
+        if (colorInput) colorInput.value = color;
+        onColorChanged(color);
+    }
+
+    // --- EDIT CATEGORY ACTIONS ---
+    function openEditCategoryFromTrigger(btn) {
+        if (!btn) return;
+        const catId = btn.getAttribute('data-cat-id');
+        openEditCategoryModal(catId);
+    }
+
+    function openEditCategoryModal(id, name, icon, color, totalItems) {
+        // Find category from existing list if not all args provided or if called by id
+        const cat = (window.EXISTING_CATEGORIES || []).find(c => (c.Id || c.id) === id);
+        if (cat) {
+            name = name ?? (cat.Name || cat.name);
+            icon = icon ?? (cat.Icon || cat.icon);
+            color = color ?? (cat.Color || cat.color);
+            totalItems = totalItems ?? (cat.TotalItems || cat.totalItems);
+        }
+
+        icon = icon || '📁';
+        color = color || '#06b6d4';
+        totalItems = parseInt(totalItems, 10);
+        if (isNaN(totalItems)) totalItems = 0;
+
+        document.getElementById('editCatId').value = id;
+        document.getElementById('deleteCatId').value = id;
+        document.getElementById('editCatNameInput').value = name || '';
+        document.getElementById('editCatPreviewName').innerText = name || 'Folder Name';
+
+        // Close cropper box if open
+        cancelCropper('edit');
+
+        // Reset image file and URL inputs
+        const editImgUrl = document.getElementById('editImgUrlInput');
+        if (editImgUrl) editImgUrl.value = '';
+        const editImgFile = document.getElementById('editImgFileInput');
+        if (editImgFile) editImgFile.value = '';
+
+        // Populate edit icon grid and select the folder's existing icon
+        populateIconGrid('editCatIconGrid', icon, 'selectEditFolderIcon');
+        selectEditFolderIcon(icon);
+
+        // Reset filter tab to 'all'
+        const allTab = document.querySelector('.edit-cat-icon-tab[data-cat="all"]');
+        if (allTab) {
+            filterIconTabs('all', allTab, 'editCatIconGrid');
+        }
+
+        // Color accent
+        document.getElementById('editCatColorInput').value = color;
+        onEditColorChanged(color);
+
+        // Empty folder rule for deletion
+        const statusBox = document.getElementById('editFolderItemStatus');
+        const delBtn = document.getElementById('btnDeleteCategory');
+
+        if (totalItems > 0) {
+            if (statusBox) {
+                statusBox.innerHTML = `
+                    <div class="alert alert-warning py-2 px-3 small d-flex align-items-center justify-content-between mb-3" style="background:rgba(245, 158, 11, 0.12); border:1px solid rgba(245, 158, 11, 0.35); color:#fbbf24; border-radius:10px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="font-size:1.15rem;">⚠️</span>
+                            <span>Folder contains <strong class="text-white">${totalItems} item${totalItems > 1 ? 's' : ''}</strong>. It cannot be deleted until all items inside are moved or deleted.</span>
+                        </div>
+                    </div>`;
+            }
+            if (delBtn) {
+                delBtn.disabled = true;
+                delBtn.style.opacity = '0.4';
+                delBtn.style.cursor = 'not-allowed';
+                delBtn.title = `Cannot delete: folder contains ${totalItems} item(s). Empty folder first.`;
+                delBtn.innerHTML = `🔒 Cannot Delete (${totalItems} items)`;
+            }
+        } else {
+            if (statusBox) {
+                statusBox.innerHTML = `
+                    <div class="alert alert-success py-2 px-3 small d-flex align-items-center gap-2 mb-3" style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.3); color:#6ee7b7; border-radius:10px;">
+                        <span style="font-size:1.15rem;">✅</span>
+                        <span>This folder is completely empty (0 items). It is safe to delete.</span>
+                    </div>`;
+            }
+            if (delBtn) {
+                delBtn.disabled = false;
+                delBtn.style.opacity = '1';
+                delBtn.style.cursor = 'pointer';
+                delBtn.title = 'Delete this empty folder';
+                delBtn.innerHTML = `🗑️ Delete Folder`;
+            }
+        }
+
+        const modalEl = document.getElementById('editCategoryModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+    }
+
+    function selectEditFolderIcon(icon) {
+        const input = document.getElementById('editCatIconInput');
+        if (input) input.value = icon;
+        const display = document.getElementById('editCatCurrentIconDisplay');
+        if (display) display.innerHTML = renderIconHtml(icon, 32);
+        const label = document.getElementById('editSelectedIconLabel');
+        if (label) label.innerHTML = renderIconHtml(icon, 20);
+        const preview = document.getElementById('editCatPreviewIconBox');
+        if (preview) preview.innerHTML = renderIconHtml(icon, 38);
+        const titleIcon = document.getElementById('editModalTitleIcon');
+        if (titleIcon) titleIcon.innerHTML = renderIconHtml(icon, 22);
+
+        const grid = document.getElementById('editCatIconGrid');
+        if (grid) {
+            grid.querySelectorAll('.folder-icon-btn').forEach(btn => {
+                if (btn.getAttribute('data-icon') === icon) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    function onEditCustomIconInput(val) {
+        val = (val || '').trim();
+        const icon = val || '📁';
+        selectEditFolderIcon(icon);
+    }
+
+    function onEditColorChanged(color) {
+        const code = document.getElementById('editSelectedColorCode');
+        if (code) code.innerText = color;
+        const preview = document.getElementById('editCatPreviewIconBox');
+        if (preview) {
+            preview.style.borderColor = color;
+            preview.style.backgroundColor = color + '26';
+            preview.style.boxShadow = `0 0 15px ${color}40`;
+        }
+        const card = document.getElementById('editCatLivePreviewCard');
+        if (card) {
+            card.style.borderLeftColor = color;
+        }
+        const badge = document.querySelector('#editCatLivePreviewCard .badge');
+        if (badge) {
+            badge.style.backgroundColor = color + '2b';
+            badge.style.color = color;
+            badge.style.borderColor = color + '66';
+        }
+        const swatches = document.getElementById('editColorSwatchesContainer');
+        if (swatches) {
+            swatches.querySelectorAll('.color-swatch-btn').forEach(btn => {
+                const swatchColor = btn.style.getPropertyValue('--swatch-color');
+                if (swatchColor && swatchColor.toLowerCase() === color.toLowerCase()) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    function applyEditColorSwatch(color, btn) {
+        const input = document.getElementById('editCatColorInput');
+        if (input) input.value = color;
+        onEditColorChanged(color);
+        if (btn && btn.parentElement) {
+            btn.parentElement.querySelectorAll('.color-swatch-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    }
+
+    function updateEditFolderLivePreview() {
+        const input = document.getElementById('editCatNameInput');
+        const preview = document.getElementById('editCatPreviewName');
+        if (input && preview) {
+            preview.innerText = input.value.trim() || 'Folder Name';
+        }
+    }
+
+    function submitDeleteCategory() {
+        const delBtn = document.getElementById('btnDeleteCategory');
+        if (delBtn && delBtn.disabled) {
+            alert('Cannot delete this folder: It contains items. Only empty folders can be deleted.');
+            return;
+        }
+        const name = document.getElementById('editCatNameInput').value;
+        if (confirm(`Are you sure you want to delete empty folder "${name}"? This action cannot be undone.`)) {
+            document.getElementById('deleteCategoryForm').submit();
+        }
+    }
+
+    // Initialize icon grids on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        populateIconGrid('catIconGrid', '📁', 'selectFolderIcon');
+        populateIconGrid('editCatIconGrid', '📁', 'selectEditFolderIcon');
+        updateCustomIconCount();
+
+        const newCatModalEl = document.getElementById('newCategoryModal');
+        if (newCatModalEl) {
+            newCatModalEl.addEventListener('show.bs.modal', function() {
+                const currentIcon = document.getElementById('catIconInput')?.value || '📁';
+                cancelCropper('create');
+                populateIconGrid('catIconGrid', currentIcon, 'selectFolderIcon');
+                updateCustomIconCount();
+            });
         }
     });
 </script>

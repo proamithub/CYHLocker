@@ -70,15 +70,24 @@
         <div class="row g-3">
             @foreach (var item in recentItems)
             {
+                var catCol = !string.IsNullOrEmpty(item.CategoryColor) ? item.CategoryColor : "#06b6d4";
                 <div class="col-12 col-md-6">
-                    <div class="p-3 rounded d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);">
+                    <div class="p-3 rounded d-flex justify-content-between align-items-center" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-left: 3.5px solid @catCol;">
                         <div class="d-flex align-items-center gap-2 text-truncate me-2">
                             <span>@item.ItemIcon</span>
                             <div class="text-truncate">
                                 <a asp-area="User" asp-controller="Vault" asp-action="Details" asp-route-id="@item.Id" class="fw-semibold text-light text-decoration-none small d-block text-truncate">
                                     @item.Title
                                 </a>
-                                <small class="text-muted" style="font-size:0.75rem;">@(item.Username ?? item.UrlDomain)</small>
+                                <div class="d-flex align-items-center gap-2">
+                                    <small class="text-muted" style="font-size:0.75rem;">@(item.Username ?? item.UrlDomain)</small>
+                                    @if (!string.IsNullOrEmpty(item.CategoryName))
+                                    {
+                                        <span class="badge" style="background:@(catCol)22; color:@catCol; border:1px solid @(catCol)44; font-size:0.68rem; padding:1px 6px; border-radius:4px;">
+                                            📁 @item.CategoryName
+                                        </span>
+                                    }
+                                </div>
                             </div>
                         </div>
                         <a asp-area="User" asp-controller="Vault" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-glow py-0 px-2 small">

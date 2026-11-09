@@ -30,5 +30,6 @@ public interface IVaultService
     // Categories
     Task<List<VaultCategoryDto>> GetCategoriesAsync(string userId);
     Task<string> CreateCategoryAsync(string userId, CreateCategoryRequestDto request);
+    Task<bool> UpdateCategoryAsync(string userId, string categoryId, string name, string? icon, string? color);
     Task<bool> DeleteCategoryAsync(string userId, string categoryId);
 }

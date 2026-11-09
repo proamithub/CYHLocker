@@ -316,34 +316,122 @@ public class VaultRepository : IVaultRepository
         return categories;
     }
 
+    private static bool _categoryIconColumnMigrated = false;
+    private static async Task EnsureCategoryIconColumnExpandedAsync(SqlConnection con)
+    {
+        if (_categoryIconColumnMigrated) return;
+        try
+        {
+            await using var cmd = new SqlCommand(@"
+                IF EXISTS (
+                    SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME = 'VaultCategories_CYH' 
+                      AND COLUMN_NAME = 'Icon' 
+                      AND (CHARACTER_MAXIMUM_LENGTH < 500 AND CHARACTER_MAXIMUM_LENGTH > 0)
+                )
+                BEGIN
+                    DECLARE @ConstraintName NVARCHAR(200);
+                    SELECT @ConstraintName = d.name
+                    FROM sys.default_constraints d
+                    JOIN sys.columns c ON d.parent_object_id = c.object_id AND d.parent_column_id = c.column_id
+                    WHERE d.parent_object_id = OBJECT_ID(N'[dbo].[VaultCategories_CYH]') AND c.name = 'Icon';
+
+                    IF @ConstraintName IS NOT NULL
+                    BEGIN
+                        EXEC('ALTER TABLE [dbo].[VaultCategories_CYH] DROP CONSTRAINT [' + @ConstraintName + ']');
+                    END;
+
+                    ALTER TABLE [dbo].[VaultCategories_CYH] ALTER COLUMN [Icon] NVARCHAR(MAX) NULL;
+                    ALTER TABLE [dbo].[VaultCategories_CYH] ADD DEFAULT ('📁') FOR [Icon];
+                END", con);
+            await cmd.ExecuteNonQueryAsync();
+            _categoryIconColumnMigrated = true;
+        }
+        catch
+        {
+            _categoryIconColumnMigrated = false;
+        }
+    }
+
     public async Task<string> InsertCategoryAsync(string userId, string name, string? icon, string? color)
     {
         var id = Guid.NewGuid().ToString();
         await using var con = new SqlConnection(_conn);
         await con.OpenAsync();
-        await using var cmd = Sp(con, "ManageVault_CYH");
-        cmd.Parameters.AddWithValue("@Flag", "INSERT_CATEGORY");
-        cmd.Parameters.AddWithValue("@UserId", userId);
-        cmd.Parameters.AddWithValue("@CategoryId", id);
-        cmd.Parameters.AddWithValue("@CategoryName", name.Trim());
-        cmd.Parameters.AddWithValue("@CategoryIcon", (object?)icon ?? "📁");
-        cmd.Parameters.AddWithValue("@CategoryColor", (object?)color ?? "#06b6d4");
+        await EnsureCategoryIconColumnExpandedAsync(con);
 
-        var result = await cmd.ExecuteScalarAsync();
-        return result?.ToString() ?? id;
+        await using var cmd = new SqlCommand(@"
+            INSERT INTO [dbo].[VaultCategories_CYH] (Id, UserId, Name, Icon, Color, SortOrder, CreatedAt)
+            VALUES (@Id, @UserId, @Name, @Icon, @Color, 0, SYSUTCDATETIME());", con);
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Name", name.Trim());
+        cmd.Parameters.Add("@Icon", SqlDbType.NVarChar, -1).Value = (object?)icon ?? "📁";
+        cmd.Parameters.Add("@Color", SqlDbType.NVarChar, 50).Value = (object?)color ?? "#06b6d4";
+
+        await cmd.ExecuteNonQueryAsync();
+        return id;
     }
 
     public async Task<bool> DeleteCategoryAsync(string userId, string categoryId)
     {
         await using var con = new SqlConnection(_conn);
         await con.OpenAsync();
-        await using var cmd = Sp(con, "ManageVault_CYH");
-        cmd.Parameters.AddWithValue("@Flag", "DELETE_CATEGORY");
-        cmd.Parameters.AddWithValue("@UserId", userId);
-        cmd.Parameters.AddWithValue("@CategoryId", categoryId);
 
-        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+        // Safety Rule: A folder can ONLY be deleted if it is completely empty!
+        await using var checkCmd = new SqlCommand(@"
+            SELECT COUNT(1) 
+            FROM [dbo].[VaultItems_CYH] 
+            WHERE CategoryId = @CategoryId AND UserId = @UserId AND IsDeleted = 0", con);
+        checkCmd.Parameters.AddWithValue("@CategoryId", categoryId);
+        checkCmd.Parameters.AddWithValue("@UserId", userId);
+
+        var itemCount = Convert.ToInt32(await checkCmd.ExecuteScalarAsync() ?? 0);
+        if (itemCount > 0)
+        {
+            // Folder is not empty; deletion blocked
+            return false;
+        }
+
+        await using var deleteCmd = new SqlCommand(@"
+            DELETE FROM [dbo].[VaultCategories_CYH]
+            WHERE Id = @CategoryId AND UserId = @UserId", con);
+        deleteCmd.Parameters.AddWithValue("@CategoryId", categoryId);
+        deleteCmd.Parameters.AddWithValue("@UserId", userId);
+
+        var rows = await deleteCmd.ExecuteNonQueryAsync();
         return rows > 0;
+    }
+
+    public async Task<bool> UpdateCategoryAsync(string userId, string categoryId, string name, string? icon, string? color)
+    {
+        try
+        {
+            await using var con = new SqlConnection(_conn);
+            await con.OpenAsync();
+            await EnsureCategoryIconColumnExpandedAsync(con);
+
+            await using var cmd = new SqlCommand(@"
+                UPDATE [dbo].[VaultCategories_CYH]
+                SET Name = @Name,
+                    Icon = @Icon,
+                    Color = @Color
+                WHERE Id = @Id AND UserId = @UserId;", con);
+
+            cmd.Parameters.AddWithValue("@Id", categoryId);
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@Name", name.Trim());
+            cmd.Parameters.Add("@Icon", SqlDbType.NVarChar, -1).Value = (object?)icon ?? "📁";
+            cmd.Parameters.Add("@Color", SqlDbType.NVarChar, 50).Value = (object?)color ?? "#06b6d4";
+
+            var rows = await cmd.ExecuteNonQueryAsync();
+            return rows > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "[CYH] UpdateCategoryAsync failed for CategoryId={CategoryId}", categoryId);
+            return false;
+        }
     }
 
     // ── HELPERS ───────────────────────────────────────────────────────────────

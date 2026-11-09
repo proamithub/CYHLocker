@@ -12,6 +12,9 @@
     <!-- Bootstrap -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
+    <!-- Core Site & Design System CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
     <!-- Admin CSS -->
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 
@@ -118,6 +121,11 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item user-dropdown-item" href="javascript:void(0);" onclick="openChangePasswordModal()">
+                                    🔑 Change Password
+                                </a>
+                            </li>
+                            <li>
                                 <form asp-area="" asp-controller="Auth" asp-action="Logout" method="post">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="dropdown-item admin-logout-link">🚪 Logout</button>
@@ -140,6 +148,9 @@
             </footer>
         </div>
     </div>
+
+    <!-- Global Change Password Modal Popup -->
+    <partial name="_ChangePasswordModal" />
 
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

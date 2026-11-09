@@ -257,6 +257,30 @@ public class VaultController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateCategory(string id, string name, string? icon, string? color)
+    {
+        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(id))
+        {
+            var ok = await _vaultService.UpdateCategoryAsync(CurrentUserId, id, name, icon, color);
+            TempData[ok ? "Success" : "Error"] = ok ? $"Folder '{name}' updated successfully." : "Failed to update folder.";
+        }
+        return RedirectToAction(nameof(Index), new { categoryId = id });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteCategory(string id)
+    {
+        if (!string.IsNullOrWhiteSpace(id))
+        {
+            var ok = await _vaultService.DeleteCategoryAsync(CurrentUserId, id);
+            TempData[ok ? "Success" : "Error"] = ok 
+                ? "Folder deleted successfully." 
+                : "Cannot delete folder: This folder contains items. A folder can only be deleted when it is completely empty.";
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
     // ── PASSWORD GENERATOR ─────────────────────────────────────────────────────
     [HttpGet]
     public IActionResult GeneratePassword(int length = 16, bool uppercase = true, bool lowercase = true, bool numbers = true, bool symbols = true)
